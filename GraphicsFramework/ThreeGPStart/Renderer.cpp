@@ -88,6 +88,56 @@ bool Renderer::InitialiseGeometry()
 
 		// TODO: create VBO for the vertices and a EBO for the elements
 		// TODO: create a VBA to wrap everything and specify locations in the shaders
+
+		GLuint vertexVBO;
+
+		glGenBuffers(1, &vertexVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * mesh.vertices.size(), mesh.vertices.data(), GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		GLuint coloursVBO;
+
+		glGenBuffers(1, &coloursVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, coloursVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * mesh.normals.size(), mesh.normals.data(), GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		GLuint elementsVBO;
+
+		glGenBuffers(1, &elementsVBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementsVBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * mesh.elements.size(), mesh.elements.data(), GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		tempElementCount = mesh.elements.size();
+
+		//GLuint textureCoordsVBO;
+
+		//glGenBuffers(1, &textureCoordsVBO);
+		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, textureCoordsVBO);
+		//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(glm::vec2) * mesh.uvCoords.size(), mesh.uvCoords.data(), GL_STATIC_DRAW);
+		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+
+		glGenVertexArrays(1, &m_VAO);
+		glBindVertexArray(m_VAO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, coloursVBO);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+		//glBindBuffer(GL_ARRAY_BUFFER, textureCoordsVBO);
+		//glEnableVertexAttribArray(2);
+		//glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementsVBO);
+
+		glBindVertexArray(0);
 	}
 
 
@@ -101,10 +151,10 @@ bool Renderer::InitialiseGeometry()
 // Render the scene. Passed the delta time since last called.
 void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 {			
-
+	glUseProgram(m_program);
 	// Configure pipeline settings
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 
 	// Wireframe mode controlled by ImGui
 	if (m_wireframe)
@@ -117,12 +167,29 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// TODO: Compute viewport and projection matrix
+	// Compute viewport and projection matrix
+	GLint viewportSize[4];
+	glGetIntegerv(GL_VIEWPORT, viewportSize);
+	const float aspect_ratio = viewportSize[2] / (float)viewportSize[3];
+	glm::mat4 projection_xform = glm::perspective(glm::radians(45.0f), aspect_ratio, 1.0f, 100000.0f);
 
 	// TODO: Compute camera view matrix and combine with projection matrix for passing to shader
+	// Compute camera view matrix and combine with projection matrix for passing to shader
+	glm::mat4 view_xform = glm::lookAt(camera.GetPosition(), camera.GetPosition() + camera.GetLookVector(), camera.GetUpVector());
+	glm::mat4 combined_xform = projection_xform * view_xform;
 
 	// TODO: Send the combined matrix to the shader in a uniform
+	// Send the combined matrix to the shader in a uniform
+	GLuint combined_xform_id = glGetUniformLocation(m_program, "combined_xform");
+	glUniformMatrix4fv(combined_xform_id, 1, GL_FALSE, glm::value_ptr(combined_xform));
 
 	// TODO: render each mesh. Send the correct model matrix to the shader in a uniform
+	GLuint model_xform_id = glGetUniformLocation(m_program, "model_xform");
+	glUniformMatrix4fv(model_xform_id, 1, GL_FALSE, glm::value_ptr(tempXForm));
+
+	glBindVertexArray(m_VAO);
+	glDrawElements(GL_TRIANGLES, tempElementCount, GL_UNSIGNED_INT, (void*)0);
+	glBindVertexArray(0);
 
 	// Always a good idea, when debugging at least, to check for GL errors each frame
 	Helpers::CheckForGLError();

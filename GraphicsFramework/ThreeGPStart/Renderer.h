@@ -20,6 +20,9 @@ private:
 
 	bool m_wireframe{ false };
 
+	glm::mat4 tempXForm = glm::mat4(1);
+	int tempElementCount = 0;
+
 	bool CreateProgram();
 public:
 	Renderer();
