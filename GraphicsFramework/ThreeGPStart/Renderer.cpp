@@ -1,5 +1,8 @@
 #include "Renderer.h"
 #include "Camera.h"
+#include "Model.h"
+#include "Light.h"
+#include "Terrain.h"
 
 Renderer::Renderer() 
 {
@@ -75,7 +78,7 @@ bool Renderer::InitialiseGeometry()
 	// Helpers has an object for loading 3D geometry, supports most types
 	
 	// Load in the jeep
-	Helpers::ModelLoader loader;
+	/*Helpers::ModelLoader loader;
 	if (!loader.LoadFromFile("Data\\Models\\Jeep\\jeep.obj"))
 		return false;
 
@@ -138,8 +141,143 @@ bool Renderer::InitialiseGeometry()
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementsVBO);
 
 		glBindVertexArray(0);
+	}*/
+
+	//Initialize the diferent lights in the scene
+	Light pointTest1;
+	pointTest1.m_position = glm::vec3(25.0f, 10.0f, 0.0f);
+	pointTest1.m_intensity = 0.5f;
+	pointTest1.m_type = 1;
+	pointTest1.m_direction = glm::vec3(1.0f, -1.0f, 1.0f);
+	pointTest1.m_colour = glm::vec3(1.0f, 1.0f, 0.0f);
+
+	Light pointTest2;
+	pointTest2.m_position = glm::vec3(500.0f, 10.0f, 200.0f);
+	pointTest2.m_intensity = 1.0f;
+	pointTest2.m_type = 1;
+	pointTest2.m_direction = glm::vec3(1.0f, -1.0f, 1.0f);
+	pointTest2.m_colour = glm::vec3(1.0f, 0.0f, 1.0f);
+
+	Light pointTest6;
+	pointTest6.m_position = glm::vec3(150.0f, 50.0f, 300.0f);
+	pointTest6.m_intensity = 1.0f;
+	pointTest6.m_type = 1;
+	pointTest6.m_direction = glm::vec3(1.0f, -1.0f, 1.0f);
+	pointTest6.m_colour = glm::vec3(0.6f, 1.0f, 0.0f);
+
+	Light pointTest7;
+	pointTest7.m_position = glm::vec3(400.0f, 10.0f, 400.0f);
+	pointTest7.m_intensity = 1.0f;
+	pointTest7.m_type = 1;
+	pointTest7.m_direction = glm::vec3(1.0f, -1.0f, 1.0f);
+	pointTest7.m_colour = glm::vec3(1.0f, 0.0f, 0.0f);
+
+	Light pointTest8;
+	pointTest8.m_position = glm::vec3(410.0f, 10.0f, 410.0f);
+	pointTest8.m_intensity = 1.0f;
+	pointTest8.m_type = 1;
+	pointTest8.m_direction = glm::vec3(1.0f, -1.0f, 1.0f);
+	pointTest8.m_colour = glm::vec3(0.0f, 0.0f, 1.0f);
+
+	Light pointTest9;
+	pointTest9.m_position = glm::vec3(400.0f, 10.0f, 410.0f);
+	pointTest9.m_intensity = 1.0f;
+	pointTest9.m_type = 1;
+	pointTest9.m_direction = glm::vec3(1.0f, -1.0f, 1.0f);
+	pointTest9.m_colour = glm::vec3(0.0f, 1.0f, 0.0f);
+
+	Light directionalLight;
+	directionalLight.m_position = glm::vec3(200.0f, 10.0f, 200.0f);
+	directionalLight.m_intensity = 0.2f;
+	directionalLight.m_type = 0;
+	directionalLight.m_direction = glm::vec3(1.0f, -1.0f, 1.0f);
+	directionalLight.m_colour = glm::vec3(1.0f, 1.0f, 1.0f);
+
+	Light spotLight1;
+	spotLight1.m_position = glm::vec3(150.0f, 30.0f, 220.0f);
+	spotLight1.m_intensity = 1.0f;
+	spotLight1.m_type = 2;
+	spotLight1.m_direction = glm::vec3(1.0f, 0.0f, 0.0f);
+	spotLight1.m_colour = glm::vec3(1.0f, 1.0f, 1.0f);
+	spotLight1.m_angle = 0.6f;
+
+	Light spotLight2;
+	spotLight2.m_position = glm::vec3(150.0f, 30.0f, 180.0f);
+	spotLight2.m_intensity = 1.0f;
+	spotLight2.m_type = 2;
+	spotLight2.m_direction = glm::vec3(1.0f, 0.0f, 0.0f);
+	spotLight2.m_colour = glm::vec3(1.0f, 1.0f, 1.0f);
+	spotLight2.m_angle = 0.6f;
+
+	m_lights.push_back(pointTest1);
+	m_lights.push_back(pointTest2);
+	m_lights.push_back(pointTest6);
+	m_lights.push_back(pointTest7);
+	m_lights.push_back(pointTest8);
+	m_lights.push_back(pointTest9);
+	m_lights.push_back(spotLight1);
+	m_lights.push_back(spotLight2);
+	m_lights.push_back(directionalLight);
+
+	std::vector<std::string> objTemp;
+
+	//Initialise the data for the two models in the scene. The aquapig and the jeep
+	Helpers::ImageLoader imageLoader;
+
+	if (!imageLoader.Load("Data\\Models\\AquaPig\\aqua_pig_2K.png")) {
+		imageLoader.Load("Data\\Error.png");
 	}
 
+	//Creates a vector of model files and loads each one
+	Helpers::ModelLoader modelLoader;
+
+	objTemp.push_back("Data\\Models\\AquaPig\\hull.obj");
+	objTemp.push_back("Data\\Models\\AquaPig\\wing_right.obj");
+	objTemp.push_back("Data\\Models\\AquaPig\\wing_left.obj");
+	objTemp.push_back("Data\\Models\\AquaPig\\propeller.obj");
+	objTemp.push_back("Data\\Models\\AquaPig\\gun_base.obj");
+	objTemp.push_back("Data\\Models\\AquaPig\\gun.obj");
+
+	for (size_t i = 0; i < objTemp.size(); i++)
+	{
+		if (!modelLoader.LoadFromFile(objTemp[i])) {
+			return false;
+		}
+	}
+
+	m_models.push_back(std::make_shared<Model>(Model(glm::vec3(0), 500.0f)));
+	m_models.push_back(std::make_shared<Model>(Model(glm::vec3(50.0f, 0.0f, 0.0f), 500.0f)));
+
+	std::vector<glm::mat4> xFormsTemp;
+
+	xFormsTemp.push_back(glm::mat4(1));
+	glm::mat4 trans = glm::translate(glm::mat4(1), glm::vec3(-2.231, 0.272, -2.663));
+	xFormsTemp.push_back(trans);
+
+	trans = glm::translate(glm::mat4(1), glm::vec3(2.231, 0.272, -2.663));
+	xFormsTemp.push_back(trans);
+
+	trans = glm::translate(glm::mat4(1), glm::vec3(0.0, 1.395, -3.616));
+	glm::mat4 rot = glm::rotate(glm::mat4(1), glm::radians(90.0f), glm::vec3(1, 0, 0));
+	xFormsTemp.push_back(trans * rot);
+
+	trans = glm::translate(glm::mat4(1), glm::vec3(0.0, 0.569, -1.866));
+	xFormsTemp.push_back(trans);
+
+	trans = glm::translate(glm::mat4(1), glm::vec3(0.0, 1.506, -0.644));
+	xFormsTemp.push_back(trans);
+
+	for (size_t i = 0; i < m_models.size(); i++)
+	{
+		m_models[i]->Initialise(xFormsTemp, imageLoader, modelLoader);
+	}
+
+	std::string tex = "Data\\Textures\\grass_green-01_df_.dds";
+	std::string hMap = "Data\\Heightmaps\\3gp_heightmap.bmp";
+
+	std::shared_ptr<Terrain> terrain = std::make_shared<Terrain>(1024, 1024);
+	terrain->Initialise(glm::mat4(1), tex, hMap);
+	m_models.push_back(terrain);
 
 	// Good idea to check for an error now:	
 	Helpers::CheckForGLError();
@@ -187,9 +325,13 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	GLuint model_xform_id = glGetUniformLocation(m_program, "model_xform");
 	glUniformMatrix4fv(model_xform_id, 1, GL_FALSE, glm::value_ptr(tempXForm));
 
-	glBindVertexArray(m_VAO);
-	glDrawElements(GL_TRIANGLES, tempElementCount, GL_UNSIGNED_INT, (void*)0);
-	glBindVertexArray(0);
+	//glBindVertexArray(m_VAO);
+	//glDrawElements(GL_TRIANGLES, tempElementCount, GL_UNSIGNED_INT, (void*)0);
+	//glBindVertexArray(0);
+
+	for (std::shared_ptr<Model>& model : m_models) {
+		model->Render(m_program, combined_xform, tempXForm, m_lights, camera);
+	}
 
 	// Always a good idea, when debugging at least, to check for GL errors each frame
 	Helpers::CheckForGLError();

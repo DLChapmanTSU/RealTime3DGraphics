@@ -104,10 +104,13 @@
     <ClInclude Include="External\IMGUI\imstb_truetype.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="ImageLoader.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="RedirectStandardOutput.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Simulation.h" />
+    <ClInclude Include="Terrain.h" />
     <ClInclude Include="ThreeGPStart.h" />
   </ItemGroup>
   <ItemGroup>
@@ -122,8 +125,10 @@
     <ClCompile Include="ImageLoader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Simulation.cpp" />
+    <ClCompile Include="Terrain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="External\IMGUI\imgui.natvis" />

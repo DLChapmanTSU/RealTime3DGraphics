@@ -6,6 +6,9 @@
 #include "Mesh.h"
 #include "Camera.h"
 
+class Model;
+struct Light;
+
 class Renderer
 {
 private:
@@ -22,6 +25,9 @@ private:
 
 	glm::mat4 tempXForm = glm::mat4(1);
 	int tempElementCount = 0;
+
+	std::vector<Light> m_lights;
+	std::vector<std::shared_ptr<Model>> m_models;
 
 	bool CreateProgram();
 public:
