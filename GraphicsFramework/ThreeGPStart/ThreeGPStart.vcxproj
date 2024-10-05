@@ -110,6 +110,7 @@
     <ClInclude Include="RedirectStandardOutput.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Simulation.h" />
+    <ClInclude Include="Skybox.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="ThreeGPStart.h" />
   </ItemGroup>
@@ -128,6 +129,7 @@
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Simulation.cpp" />
+    <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="Terrain.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -135,7 +137,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Data\Shaders\fragment_shader.glsl" />
+    <None Include="Data\Shaders\fragment_shader_rect.glsl" />
+    <None Include="Data\Shaders\fragment_shader_skybox.glsl" />
     <None Include="Data\Shaders\vertex_shader.glsl" />
+    <None Include="Data\Shaders\vertex_shader_rect.glsl" />
+    <None Include="Data\Shaders\vertex_shader_skybox.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

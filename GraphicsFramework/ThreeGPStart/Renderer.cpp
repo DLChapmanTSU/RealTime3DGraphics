@@ -3,6 +3,7 @@
 #include "Model.h"
 #include "Light.h"
 #include "Terrain.h"
+#include "Skybox.h"
 
 Renderer::Renderer() 
 {
@@ -36,43 +37,49 @@ void Renderer::DefineGUI()
 }
 
 // Load, compile and link the shaders and create a program object to host them
-bool Renderer::CreateProgram()
+bool Renderer::CreateProgram(GLuint& p, std::string v, std::string f)
 {
 	// Create a new program (returns a unqiue id)
-	m_program = glCreateProgram();
+	p = glCreateProgram();
 
 	// Load and create vertex and fragment shaders
-	GLuint vertex_shader{ Helpers::LoadAndCompileShader(GL_VERTEX_SHADER, "Data/Shaders/vertex_shader.glsl") };
-	GLuint fragment_shader{ Helpers::LoadAndCompileShader(GL_FRAGMENT_SHADER, "Data/Shaders/fragment_shader.glsl") };
+	GLuint vertex_shader{ Helpers::LoadAndCompileShader(GL_VERTEX_SHADER, v) };
+	GLuint fragment_shader{ Helpers::LoadAndCompileShader(GL_FRAGMENT_SHADER, f) };
 	if (vertex_shader == 0 || fragment_shader == 0)
 		return false;
 
 	// Attach the vertex shader to this program (copies it)
-	glAttachShader(m_program, vertex_shader);
+	glAttachShader(p, vertex_shader);
 
-	// The attibute 0 maps to the input stream "vertex_position" in the vertex shader
+	// The attibute location 0 maps to the input stream "vertex_position" in the vertex shader
 	// Not needed if you use (location=0) in the vertex shader itself
 	//glBindAttribLocation(m_program, 0, "vertex_position");
 
 	// Attach the fragment shader (copies it)
-	glAttachShader(m_program, fragment_shader);
+	glAttachShader(p, fragment_shader);
 
 	// Done with the originals of these as we have made copies
 	glDeleteShader(vertex_shader);
 	glDeleteShader(fragment_shader);
 
 	// Link the shaders, checking for errors
-	if (!Helpers::LinkProgramShaders(m_program))
+	if (!Helpers::LinkProgramShaders(p))
 		return false;
 
-	return !Helpers::CheckForGLError();
+	return true;
 }
 
 // Load / create geometry into OpenGL buffers	
 bool Renderer::InitialiseGeometry()
 {
 	// Load and compile shaders into m_program
-	if (!CreateProgram())
+	if (!CreateProgram(m_program, "Data/Shaders/vertex_shader.glsl", "Data/Shaders/fragment_shader.glsl"))
+		return false;
+
+	if (!CreateProgram(m_skyProgram, "Data/Shaders/vertex_shader_skybox.glsl", "Data/Shaders/fragment_shader_skybox.glsl"))
+		return false;
+
+	if (!CreateProgram(m_rectProgram, "Data/Shaders/vertex_shader_rect.glsl", "Data/Shaders/fragment_shader_rect.glsl"))
 		return false;
 
 	// Helpers has an object for loading 3D geometry, supports most types
@@ -279,6 +286,101 @@ bool Renderer::InitialiseGeometry()
 	terrain->Initialise(glm::mat4(1), tex, hMap);
 	m_models.push_back(terrain);
 
+	//Initialises skybox and its textures
+	m_skybox = std::make_shared<Skybox>(
+		"Data\\Models\\Sky\\Clouds\\SkyBox_Right.tga",
+		"Data\\Models\\Sky\\Clouds\\SkyBox_Left.tga",
+		"Data\\Models\\Sky\\Clouds\\SkyBox_Bottom.tga",
+		"Data\\Models\\Sky\\Clouds\\SkyBox_Top.tga",
+		"Data\\Models\\Sky\\Clouds\\SkyBox_Front.tga",
+		"Data\\Models\\Sky\\Clouds\\SkyBox_Back.tga",
+		"Data\\Models\\Sky\\Clouds\\skybox.x");
+
+	m_skybox->Initialize();
+
+	//From Learn OpenGL
+	glGenFramebuffers(1, &m_rectFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
+
+	
+	glGenTextures(1, &m_rectTexture);
+	glBindTexture(GL_TEXTURE_2D, m_rectTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_rectTexture, 0);
+
+	unsigned int rbo;
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	if (!glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		return false;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//glDeleteFramebuffers(1, &fbo);
+
+	glm::vec2 rectVerts[]
+	{
+		glm::vec2(1.0f, -1.0f),
+		glm::vec2(-1.0f, -1.0f),
+		glm::vec2(-1.0f, 1.0f),
+		glm::vec2(1.0f, 1.0f)
+	};
+
+	glm::vec2 rectUV[]
+	{
+		glm::vec2(1.0f, 0.0f),
+		glm::vec2(0.0f, 0.0f),
+		glm::vec2(0.0f, 1.0f),
+		glm::vec2(1.0f, 1.0f)
+	};
+
+	GLuint rectElements[]
+	{
+		0,1,2,
+		3,0,2
+	};
+
+	GLuint vertexVBO;
+
+	glGenBuffers(1, &vertexVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 4, rectVerts, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	GLuint elementsVBO;
+
+	glGenBuffers(1, &elementsVBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementsVBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 6, rectElements, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	GLuint textureCoordsVBO;
+
+	glGenBuffers(1, &textureCoordsVBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, textureCoordsVBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(glm::vec2) * 4, rectUV, GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	glGenVertexArrays(1, &m_VAO);
+	glBindVertexArray(m_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, textureCoordsVBO);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementsVBO);
+
+	glBindVertexArray(0);
+
 	// Good idea to check for an error now:	
 	Helpers::CheckForGLError();
 
@@ -288,10 +390,11 @@ bool Renderer::InitialiseGeometry()
 
 // Render the scene. Passed the delta time since last called.
 void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
-{			
-	glUseProgram(m_program);
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
+	glUseProgram(m_skyProgram);
 	// Configure pipeline settings
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
 
 	// Wireframe mode controlled by ImGui
@@ -301,7 +404,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	// Clear buffers from previous frame
-	glClearColor(0.0f, 0.0f, 0.0f, 0.f);
+	glClearColor(0.3f, 0.3f, 0.3f, 0.f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// TODO: Compute viewport and projection matrix
@@ -315,6 +418,22 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	// Compute camera view matrix and combine with projection matrix for passing to shader
 	glm::mat4 view_xform = glm::lookAt(camera.GetPosition(), camera.GetPosition() + camera.GetLookVector(), camera.GetUpVector());
 	glm::mat4 combined_xform = projection_xform * view_xform;
+	glm::mat4 sky_view_xform = glm::mat4(glm::mat3(view_xform));
+	glm::mat4 sky_combined_xform = projection_xform * sky_view_xform;
+
+	// Send the combined matrix to the shader in a uniform
+	GLuint sky_combined_xform_id = glGetUniformLocation(m_skyProgram, "combined_xform");
+	glUniformMatrix4fv(sky_combined_xform_id, 1, GL_FALSE, glm::value_ptr(sky_combined_xform));
+
+	//Disables then re-enables depth when drawing the skybox so that it appears behind every other mesh in the scene
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+	m_skybox->Render(m_skyProgram, sky_combined_xform);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+
+	//Renders terrain using the terrain shader
+	glUseProgram(m_program);
 
 	// TODO: Send the combined matrix to the shader in a uniform
 	// Send the combined matrix to the shader in a uniform
@@ -332,6 +451,16 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	for (std::shared_ptr<Model>& model : m_models) {
 		model->Render(m_program, combined_xform, tempXForm, m_lights, camera);
 	}
+
+	glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
+	glUseProgram(m_rectProgram);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindVertexArray(m_VAO);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glBindTexture(GL_TEXTURE_2D, m_rectTexture);
+	glDrawArrays(GL_TRIANGLES, 0, 4);
+	glBindVertexArray(0);
 
 	// Always a good idea, when debugging at least, to check for GL errors each frame
 	Helpers::CheckForGLError();

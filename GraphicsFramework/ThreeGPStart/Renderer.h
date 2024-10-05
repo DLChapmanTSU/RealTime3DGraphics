@@ -8,12 +8,17 @@
 
 class Model;
 struct Light;
+class Skybox;
 
 class Renderer
 {
 private:
 	// Program object - to host shaders
 	GLuint m_program{ 0 };
+	GLuint m_skyProgram{ 0 };
+	GLuint m_rectProgram{ 0 };
+	GLuint m_rectFBO{ 0 };
+	GLuint m_rectTexture{ 0 };
 
 	// Vertex Array Object to wrap all render settings
 	GLuint m_VAO{ 0 };
@@ -28,8 +33,9 @@ private:
 
 	std::vector<Light> m_lights;
 	std::vector<std::shared_ptr<Model>> m_models;
+	std::shared_ptr<Skybox> m_skybox;
 
-	bool CreateProgram();
+	bool CreateProgram(GLuint& p, std::string v, std::string f);
 public:
 	Renderer();
 	~Renderer();

@@ -80,6 +80,9 @@
     <ClInclude Include="Terrain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Skybox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -127,6 +130,9 @@
     <ClCompile Include="Terrain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Skybox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="External\IMGUI\imgui.natvis">
@@ -138,6 +144,18 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Data\Shaders\vertex_shader.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Data\Shaders\vertex_shader_skybox.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Data\Shaders\fragment_shader_skybox.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Data\Shaders\fragment_shader_rect.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Data\Shaders\vertex_shader_rect.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
