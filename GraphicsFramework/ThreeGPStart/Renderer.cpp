@@ -391,7 +391,7 @@ bool Renderer::InitialiseGeometry()
 // Render the scene. Passed the delta time since last called.
 void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_rectFBO);
 	glUseProgram(m_skyProgram);
 	// Configure pipeline settings
 	//glEnable(GL_DEPTH_TEST);
@@ -404,7 +404,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	// Clear buffers from previous frame
-	glClearColor(0.3f, 0.3f, 0.3f, 0.f);
+	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// TODO: Compute viewport and projection matrix
@@ -452,16 +452,25 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		model->Render(m_program, combined_xform, tempXForm, m_lights, camera);
 	}
 
-	glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
+	
+	
+	
+	/*glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), 0);
 	glUseProgram(m_rectProgram);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindVertexArray(m_VAO);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
+	glActiveTexture(0);
 	glBindTexture(GL_TEXTURE_2D, m_rectTexture);
 	glDrawArrays(GL_TRIANGLES, 0, 4);
-	glBindVertexArray(0);
+	//glNamedFramebufferDrawBuffer(m_rectFBO, GL_FRONT_AND_BACK);
+	glBindVertexArray(0);*/
 
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBlitFramebuffer(m_rectFBO, 0, 800, 600, 0, 0, 800, 600, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	
 	// Always a good idea, when debugging at least, to check for GL errors each frame
 	Helpers::CheckForGLError();
 }
