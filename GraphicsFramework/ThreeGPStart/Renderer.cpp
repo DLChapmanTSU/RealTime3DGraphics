@@ -308,20 +308,23 @@ bool Renderer::InitialiseGeometry()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_rectTexture, 0);
+	//glBindTexture(GL_TEXTURE_2D, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_rectTexture, 0);
 
 	unsigned int rbo;
 	glGenRenderbuffers(1, &rbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+
+	
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_rectTexture, 0);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
 	if (!glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
 		return false;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	//glDeleteFramebuffers(1, &fbo);
+	//glDeleteFramebuffers(1, &m_rectFBO);
 
 	glm::vec2 rectVerts[]
 	{
@@ -342,7 +345,7 @@ bool Renderer::InitialiseGeometry()
 	GLuint rectElements[]
 	{
 		0,1,2,
-		3,0,2
+		0,2,3
 	};
 
 	GLuint vertexVBO;
@@ -391,10 +394,10 @@ bool Renderer::InitialiseGeometry()
 // Render the scene. Passed the delta time since last called.
 void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 {
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_rectFBO);
 	glUseProgram(m_skyProgram);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
 	// Configure pipeline settings
-	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
 
 	// Wireframe mode controlled by ImGui
@@ -454,22 +457,30 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 
 	
 	
-	
-	/*glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), 0);
-	glUseProgram(m_rectProgram);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
+	
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	glUseProgram(m_rectProgram);
 	glBindVertexArray(m_VAO);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
-	glActiveTexture(0);
 	glBindTexture(GL_TEXTURE_2D, m_rectTexture);
-	glDrawArrays(GL_TRIANGLES, 0, 4);
+	//glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
+	
+	
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
 	//glNamedFramebufferDrawBuffer(m_rectFBO, GL_FRONT_AND_BACK);
-	glBindVertexArray(0);*/
+	glBindVertexArray(0);
 
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
+	/*glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(m_rectFBO, 0, 800, 600, 0, 0, 800, 600, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBlitNamedFramebuffer(m_rectFBO, 0, 0, 0, 800, 600, 0, 0, 800, 600, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDrawBuffer(GL_FRONT_AND_BACK);*/
 	
 	// Always a good idea, when debugging at least, to check for GL errors each frame
 	Helpers::CheckForGLError();
