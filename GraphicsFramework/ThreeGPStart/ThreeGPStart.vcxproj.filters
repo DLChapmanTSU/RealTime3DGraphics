@@ -158,5 +158,17 @@
     <None Include="Data\Shaders\vertex_shader_rect.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Data\Shaders\vertex_shader_ambient.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Data\Shaders\fragment_shader_ambient.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Data\Shaders\fragment_shader_light.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Data\Shaders\vertex_shader_light.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

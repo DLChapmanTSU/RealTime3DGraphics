@@ -17,6 +17,8 @@ private:
 	GLuint m_program{ 0 };
 	GLuint m_skyProgram{ 0 };
 	GLuint m_rectProgram{ 0 };
+	GLuint m_ambientProgram{ 0 };
+	GLuint m_lightProgram{ 0 };
 	GLuint m_rectFBO{ 0 };
 	GLuint m_rectTexture{ 0 };
 

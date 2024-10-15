@@ -344,6 +344,21 @@ void Terrain::Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l,
 	glBindVertexArray(0);
 }
 
+void Terrain::RenderAmbientPass(GLuint& p, glm::mat4 c, glm::mat4 m)
+{
+	// Send the combined matrix to the shader in a uniform
+	GLuint combined_xform_id = glGetUniformLocation(p, "combined_xform");
+	glUniformMatrix4fv(combined_xform_id, 1, GL_FALSE, glm::value_ptr(c));
+
+	// Send the model matrix to the shader in a uniform
+	GLuint model_xform_id = glGetUniformLocation(p, "model_xform");
+	glUniformMatrix4fv(model_xform_id, 1, GL_FALSE, glm::value_ptr(m_xForm));
+
+	glBindVertexArray(m_VAO);
+	glDrawElements(GL_TRIANGLES, m_elementCount, GL_UNSIGNED_INT, (void*)0);
+	glBindVertexArray(0);
+}
+
 float Terrain::PerlinNoise(int x, int y)
 {
 	int n = x + y * 57;

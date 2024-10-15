@@ -27,5 +27,6 @@ public:
 	Model(glm::vec3 p, float s);
 	void Initialise(std::vector<glm::mat4>& x, Helpers::ImageLoader& image, Helpers::ModelLoader& model);
 	virtual void Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l, const Helpers::Camera& cam);
+	virtual void RenderAmbientPass(GLuint& p, glm::mat4 c, glm::mat4 m);
 	void Translate(glm::vec3& t);
 };

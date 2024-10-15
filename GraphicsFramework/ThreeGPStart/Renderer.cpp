@@ -82,6 +82,12 @@ bool Renderer::InitialiseGeometry()
 	if (!CreateProgram(m_rectProgram, "Data/Shaders/vertex_shader_rect.glsl", "Data/Shaders/fragment_shader_rect.glsl"))
 		return false;
 
+	if (!CreateProgram(m_ambientProgram, "Data/Shaders/vertex_shader_ambient.glsl", "Data/Shaders/fragment_shader_ambient.glsl"))
+		return false;
+
+	if (!CreateProgram(m_lightProgram, "Data/Shaders/vertex_shader_light.glsl", "Data/Shaders/fragment_shader_light.glsl"))
+		return false;
+
 	// Helpers has an object for loading 3D geometry, supports most types
 	
 	// Load in the jeep
@@ -299,13 +305,14 @@ bool Renderer::InitialiseGeometry()
 	m_skybox->Initialize();
 
 	//From Learn OpenGL
+	/*
 	glGenFramebuffers(1, &m_rectFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
 
 	
 	glGenTextures(1, &m_rectTexture);
 	glBindTexture(GL_TEXTURE_2D, m_rectTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 720, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glBindTexture(GL_TEXTURE_2D, 0);
@@ -314,7 +321,7 @@ bool Renderer::InitialiseGeometry()
 	unsigned int rbo;
 	glGenRenderbuffers(1, &rbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
 
 	
 	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_rectTexture, 0);
@@ -326,48 +333,21 @@ bool Renderer::InitialiseGeometry()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	//glDeleteFramebuffers(1, &m_rectFBO);
 
-	glm::vec2 rectVerts[]
-	{
-		glm::vec2(1.0f, -1.0f),
-		glm::vec2(-1.0f, -1.0f),
-		glm::vec2(-1.0f, 1.0f),
-		glm::vec2(1.0f, 1.0f)
-	};
-
-	glm::vec2 rectUV[]
-	{
-		glm::vec2(1.0f, 0.0f),
-		glm::vec2(0.0f, 0.0f),
-		glm::vec2(0.0f, 1.0f),
-		glm::vec2(1.0f, 1.0f)
-	};
-
-	GLuint rectElements[]
-	{
-		0,1,2,
-		0,2,3
-	};
+	const float windowVerts[] = { -1.0f, 1.0f, 0.3f, -1.0f,-1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, 1.0f, 0.3f, -1.0f, 1.0f, 0.3f };
+	const float windowQuadUVs[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
 
 	GLuint vertexVBO;
 
 	glGenBuffers(1, &vertexVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 4, rectVerts, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(windowVerts), windowVerts, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	GLuint elementsVBO;
+	GLuint uvVBO;
 
-	glGenBuffers(1, &elementsVBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementsVBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 6, rectElements, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	GLuint textureCoordsVBO;
-
-	glGenBuffers(1, &textureCoordsVBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, textureCoordsVBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(glm::vec2) * 4, rectUV, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glGenBuffers(1, &uvVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, uvVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(windowQuadUVs), windowQuadUVs, GL_STATIC_DRAW);
 
 	glGenVertexArrays(1, &m_VAO);
 	glBindVertexArray(m_VAO);
@@ -376,13 +356,11 @@ bool Renderer::InitialiseGeometry()
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, textureCoordsVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, uvVBO);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementsVBO);
-
-	glBindVertexArray(0);
+	glBindVertexArray(0);*/
 
 	// Good idea to check for an error now:	
 	Helpers::CheckForGLError();
@@ -395,7 +373,7 @@ bool Renderer::InitialiseGeometry()
 void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 {
 	glUseProgram(m_skyProgram);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
+	//glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
 	// Configure pipeline settings
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
@@ -451,14 +429,34 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	//glDrawElements(GL_TRIANGLES, tempElementCount, GL_UNSIGNED_INT, (void*)0);
 	//glBindVertexArray(0);
 
-	for (std::shared_ptr<Model>& model : m_models) {
-		model->Render(m_program, combined_xform, tempXForm, m_lights, camera);
+	//for (std::shared_ptr<Model>& model : m_models) {
+	//	model->Render(m_program, combined_xform, tempXForm, m_lights, camera);
+	//}
+
+	glUseProgram(m_ambientProgram);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_BLEND);
+
+	for (std::shared_ptr<Model>& model : m_models) 
+	{
+		model->RenderAmbientPass(m_ambientProgram, combined_xform, tempXForm);
+	}
+	
+	glUseProgram(m_lightProgram);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+	glDepthFunc(GL_EQUAL);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+
+	for (std::shared_ptr<Model>& model : m_models) 
+	{
+		model->Render(m_lightProgram, combined_xform, tempXForm, m_lights, camera);
 	}
 
-	
-	
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	/*glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
 	
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -468,13 +466,16 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	glBindVertexArray(m_VAO);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_BLEND);
 	glBindTexture(GL_TEXTURE_2D, m_rectTexture);
 	//glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
 	
 	
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 	//glNamedFramebufferDrawBuffer(m_rectFBO, GL_FRONT_AND_BACK);
-	glBindVertexArray(0);
+	glBindVertexArray(0);*/
 
 	/*glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
