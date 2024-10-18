@@ -305,7 +305,7 @@ bool Renderer::InitialiseGeometry()
 	m_skybox->Initialize();
 
 	//From Learn OpenGL
-	/*
+	
 	glGenFramebuffers(1, &m_rectFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
 
@@ -360,7 +360,7 @@ bool Renderer::InitialiseGeometry()
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-	glBindVertexArray(0);*/
+	glBindVertexArray(0);
 
 	// Good idea to check for an error now:	
 	Helpers::CheckForGLError();
@@ -373,10 +373,10 @@ bool Renderer::InitialiseGeometry()
 void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 {
 	glUseProgram(m_skyProgram);
-	//glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
 	// Configure pipeline settings
 	glEnable(GL_DEPTH_TEST);
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 
 	// Wireframe mode controlled by ImGui
 	if (m_wireframe)
@@ -393,7 +393,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	GLint viewportSize[4];
 	glGetIntegerv(GL_VIEWPORT, viewportSize);
 	const float aspect_ratio = viewportSize[2] / (float)viewportSize[3];
-	glm::mat4 projection_xform = glm::perspective(glm::radians(45.0f), aspect_ratio, 1.0f, 100000.0f);
+	glm::mat4 projection_xform = glm::perspective(glm::radians(45.0f), aspect_ratio, 1.0f, 1000000.0f);
 
 	// TODO: Compute camera view matrix and combine with projection matrix for passing to shader
 	// Compute camera view matrix and combine with projection matrix for passing to shader
@@ -456,7 +456,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		model->Render(m_lightProgram, combined_xform, tempXForm, m_lights, camera);
 	}
 
-	/*glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
 	
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -475,7 +475,12 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	//glNamedFramebufferDrawBuffer(m_rectFBO, GL_FRONT_AND_BACK);
-	glBindVertexArray(0);*/
+	glBindVertexArray(0);
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
 
 	/*glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);

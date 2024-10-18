@@ -18,8 +18,9 @@ protected:
 		GLuint m_VAO{ 0 };
 		glm::mat4 m_modelXForm{ glm::mat4(1) };
 	};
-protected:
+private:
 	std::vector<Mesh> m_meshes;
+protected:
 	GLuint m_tex;
 	glm::vec3 m_modelWorldPosition;
 	float m_shininess;

@@ -170,9 +170,9 @@ void Terrain::Initialise(glm::mat4 x, std::string& p, std::string& h)
 	GLuint textureCoordsVBO;
 
 	glGenBuffers(1, &textureCoordsVBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, textureCoordsVBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(glm::vec2) * m_uvs.size(), m_uvs.data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, textureCoordsVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * m_uvs.size(), m_uvs.data(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	GLuint normalsVBO;
 

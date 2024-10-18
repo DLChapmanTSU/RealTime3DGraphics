@@ -138,11 +138,13 @@
   <ItemGroup>
     <None Include="Data\Shaders\fragment_shader.glsl" />
     <None Include="Data\Shaders\fragment_shader_ambient.glsl" />
+    <None Include="Data\Shaders\fragment_shader_fxaa.glsl" />
     <None Include="Data\Shaders\fragment_shader_light.glsl" />
     <None Include="Data\Shaders\fragment_shader_rect.glsl" />
     <None Include="Data\Shaders\fragment_shader_skybox.glsl" />
     <None Include="Data\Shaders\vertex_shader.glsl" />
     <None Include="Data\Shaders\vertex_shader_ambient.glsl" />
+    <None Include="Data\Shaders\vertex_shader_fxaa.glsl" />
     <None Include="Data\Shaders\vertex_shader_light.glsl" />
     <None Include="Data\Shaders\vertex_shader_rect.glsl" />
     <None Include="Data\Shaders\vertex_shader_skybox.glsl" />
