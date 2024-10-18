@@ -19,6 +19,7 @@ private:
 	GLuint m_rectProgram{ 0 };
 	GLuint m_ambientProgram{ 0 };
 	GLuint m_lightProgram{ 0 };
+	GLuint m_fxaaProgram{ 0 };
 	GLuint m_rectFBO{ 0 };
 	GLuint m_rectTexture{ 0 };
 
@@ -29,6 +30,7 @@ private:
 	GLuint m_numElements{ 0 };
 
 	bool m_wireframe{ false };
+	bool m_antiAliasing{ false };
 
 	glm::mat4 tempXForm = glm::mat4(1);
 	int tempElementCount = 0;

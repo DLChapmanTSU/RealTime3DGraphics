@@ -30,6 +30,8 @@ void Renderer::DefineGUI()
 
 		ImGui::Checkbox("Wireframe", &m_wireframe);	// A checkbox linked to a member variable
 
+		ImGui::Checkbox("FXAA", &m_antiAliasing);
+
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		
 		ImGui::End();
@@ -86,6 +88,9 @@ bool Renderer::InitialiseGeometry()
 		return false;
 
 	if (!CreateProgram(m_lightProgram, "Data/Shaders/vertex_shader_light.glsl", "Data/Shaders/fragment_shader_light.glsl"))
+		return false;
+
+	if (!CreateProgram(m_fxaaProgram, "Data/Shaders/vertex_shader_fxaa.glsl", "Data/Shaders/fragment_shader_fxaa.glsl"))
 		return false;
 
 	// Helpers has an object for loading 3D geometry, supports most types
@@ -456,7 +461,24 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		model->Render(m_lightProgram, combined_xform, tempXForm, m_lights, camera);
 	}
 
+	
+
+	if (m_antiAliasing)
+	{
+		glUseProgram(m_fxaaProgram);
+		glBindVertexArray(m_VAO);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		GLuint resolutionId = glGetUniformLocation(m_fxaaProgram, "screen_resolution");
+		glUniform2fv(resolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
+
+		glBindTexture(GL_TEXTURE_2D, m_rectTexture);
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+	}
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
 	//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
 	
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
