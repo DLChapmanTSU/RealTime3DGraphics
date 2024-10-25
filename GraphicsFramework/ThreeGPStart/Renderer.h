@@ -22,6 +22,8 @@ private:
 	GLuint m_fxaaProgram{ 0 };
 	GLuint m_rectFBO{ 0 };
 	GLuint m_rectTexture{ 0 };
+	GLuint m_rectAAFBO{ 0 };
+	GLuint m_rectAATexture{ 0 };
 
 	// Vertex Array Object to wrap all render settings
 	GLuint m_VAO{ 0 };

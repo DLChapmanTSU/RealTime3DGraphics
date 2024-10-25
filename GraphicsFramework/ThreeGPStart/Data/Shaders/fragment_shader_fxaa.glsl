@@ -6,7 +6,7 @@ in vec2 uvCoord;
 
 out vec4 fragment_colour;
 
-float targetContrast = 0.001f;
+float targetContrast = 10000.0f;
 
 struct LuminanceSample
 {
@@ -108,10 +108,10 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 
 void main(void)
 {
-	vec2 pixelScreenPos = (gl_FragCoord.xy / screen_resolution.xy);
-	vec4 pixelData = texture2D(sampler_tex, pixelScreenPos);
-	vec2 texelSize = 1.0f / screen_resolution.xy;
-	vec4 finalColour = calculateFXAA(pixelScreenPos, pixelData, texelSize);
+	//vec2 pixelScreenPos = (gl_FragCoord.xy / screen_resolution.xy);
+	//vec4 pixelData = texture2D(sampler_tex, pixelScreenPos);
+	//vec2 texelSize = 1.0f / screen_resolution.xy;
+	//vec4 finalColour = calculateFXAA(pixelScreenPos, pixelData, texelSize);
 	//fragment_colour = finalColour;
-	gl_FragColor = finalColour;
+	fragment_colour = vec4(texture2D(sampler_tex, uvCoord).rgb, 1.0f);
 }

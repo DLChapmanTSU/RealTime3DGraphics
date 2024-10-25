@@ -338,6 +338,32 @@ bool Renderer::InitialiseGeometry()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	//glDeleteFramebuffers(1, &m_rectFBO);
 
+	glGenFramebuffers(1, &m_rectAAFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectAAFBO);
+
+
+	glGenTextures(1, &m_rectAATexture);
+	glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 720, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glBindTexture(GL_TEXTURE_2D, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_rectAATexture, 0);
+
+	unsigned int aarbo;
+	glGenRenderbuffers(1, &aarbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, aarbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+
+
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_rectTexture, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, aarbo);
+
+	if (!glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		return false;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	const float windowVerts[] = { -1.0f, 1.0f, 0.3f, -1.0f,-1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, 1.0f, 0.3f, -1.0f, 1.0f, 0.3f };
 	const float windowQuadUVs[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
 
@@ -465,39 +491,75 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 
 	if (m_antiAliasing)
 	{
+		glBindFramebuffer(GL_FRAMEBUFFER, m_rectAAFBO);
+		
 		glUseProgram(m_fxaaProgram);
 		glBindVertexArray(m_VAO);
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_EQUAL);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
 		GLuint resolutionId = glGetUniformLocation(m_fxaaProgram, "screen_resolution");
 		glUniform2fv(resolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
 
 		glBindTexture(GL_TEXTURE_2D, m_rectTexture);
+		//glActiveTexture(GL_TEXTURE0 + 2);
+		//glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
+		glUniform1i(glGetUniformLocation(m_fxaaProgram, "sampler_tex"), 0);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
+
+		//glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		//glClear(GL_COLOR_BUFFER_BIT);
+
+		glUseProgram(m_rectProgram);
+		glBindVertexArray(m_VAO);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_LEQUAL);
+		glDisable(GL_BLEND);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
+		//glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
+
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		//glNamedFramebufferDrawBuffer(m_rectFBO, GL_FRONT_AND_BACK);
+		glBindVertexArray(0);
+	}
+	else
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
+
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glUseProgram(m_rectProgram);
+		glBindVertexArray(m_VAO);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_LEQUAL);
+		glDisable(GL_BLEND);
+		glBindTexture(GL_TEXTURE_2D, m_rectTexture);
+		//glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
+
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		//glNamedFramebufferDrawBuffer(m_rectFBO, GL_FRONT_AND_BACK);
+		glBindVertexArray(0);
 	}
 	
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
-	//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
-	
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	
-	glUseProgram(m_rectProgram);
-	glBindVertexArray(m_VAO);
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE);
-	glDepthFunc(GL_LEQUAL);
-	glDisable(GL_BLEND);
-	glBindTexture(GL_TEXTURE_2D, m_rectTexture);
-	//glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
-	
-	
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	//glNamedFramebufferDrawBuffer(m_rectFBO, GL_FRONT_AND_BACK);
-	glBindVertexArray(0);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
