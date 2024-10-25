@@ -6,7 +6,7 @@ in vec2 uvCoord;
 
 out vec4 fragment_colour;
 
-float targetContrast = 10000.0f;
+float targetContrast = 0.05f;
 
 struct LuminanceSample
 {
@@ -15,6 +15,10 @@ struct LuminanceSample
 	float s;
 	float e;
 	float w;
+	float ne;
+	float se;
+	float sw;
+	float nw;
 	float contrast;
 };
 
@@ -32,6 +36,10 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	vec4 rgbS = pixel;
 	vec4 rgbE = pixel;
 	vec4 rgbW = pixel;
+	vec4 rgbNE = pixel;
+	vec4 rgbSE = pixel;
+	vec4 rgbSW = pixel;
+	vec4 rgbNW = pixel;
 
 	if (pos.y + texSize.y > 1.0f)
 	{
@@ -98,20 +106,98 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 		luminanceSample.contrast = abs(luminanceSample.w - luminanceSample.m);
 	}
 
+	//Diagonals
+	if (pos.x + texSize.x > 1.0f && pos.y + texSize.y > 1.0f)
+	{
+		luminanceSample.ne = luminanceSample.m;
+	}
+	else
+	{
+		vec2 nePos = pos;
+		nePos.x = nePos.x + texSize.x;
+		nePos.y = nePos.y + texSize.y;
+		rgbNE = texture2D(sampler_tex, nePos);
+		luminanceSample.ne = calculateLuminance(rgbNE);
+	}
+
+	if (abs(luminanceSample.ne - luminanceSample.m) > luminanceSample.contrast)
+	{
+		luminanceSample.contrast = abs(luminanceSample.ne - luminanceSample.m);
+	}
+
+	if (pos.x + texSize.x > 1.0f && pos.y - texSize.y < -1.0f)
+	{
+		luminanceSample.se = luminanceSample.m;
+	}
+	else
+	{
+		vec2 sePos = pos;
+		sePos.x = sePos.x + texSize.x;
+		sePos.y = sePos.y - texSize.y;
+		rgbSE = texture2D(sampler_tex, sePos);
+		luminanceSample.se = calculateLuminance(rgbSE);
+	}
+
+	if (abs(luminanceSample.se - luminanceSample.m) > luminanceSample.contrast)
+	{
+		luminanceSample.contrast = abs(luminanceSample.se - luminanceSample.m);
+	}
+
+	if (pos.x - texSize.x < -1.0f && pos.y - texSize.y < -1.0f)
+	{
+		luminanceSample.sw = luminanceSample.m;
+	}
+	else
+	{
+		vec2 swPos = pos;
+		swPos.x = swPos.x - texSize.x;
+		swPos.y = swPos.y - texSize.y;
+		rgbSW = texture2D(sampler_tex, swPos);
+		luminanceSample.se = calculateLuminance(rgbSW);
+	}
+
+	if (abs(luminanceSample.sw - luminanceSample.m) > luminanceSample.contrast)
+	{
+		luminanceSample.contrast = abs(luminanceSample.sw - luminanceSample.m);
+	}
+
+	if (pos.x - texSize.x < -1.0f && pos.y + texSize.y > 1.0f)
+	{
+		luminanceSample.nw = luminanceSample.m;
+	}
+	else
+	{
+		vec2 nwPos = pos;
+		nwPos.x = nwPos.x - texSize.x;
+		nwPos.y = nwPos.y + texSize.y;
+		rgbSW = texture2D(sampler_tex, nwPos);
+		luminanceSample.se = calculateLuminance(rgbNW);
+	}
+
+	if (abs(luminanceSample.nw - luminanceSample.m) > luminanceSample.contrast)
+	{
+		luminanceSample.contrast = abs(luminanceSample.nw - luminanceSample.m);
+	}
+
 	if (luminanceSample.contrast < targetContrast)
 	{
 		return pixel;
 	}
 
-	return (pixel + rgbN + rgbS + rgbE + rgbW) / 5.0f;
+	//TODO - Calculate edge direction and decide which pixel samples to blend with
+	//DO horizontal and vertical first. Could do diagonals later
+
+	return ((pixel * 4.0f) + (rgbN * 2.0f) + (rgbS * 2.0f) + (rgbE * 2.0f) + (rgbW * 2.0f) + rgbNE + rgbSE + rgbSW + rgbNW) / 16.0f;
 }
 
 void main(void)
 {
-	//vec2 pixelScreenPos = (gl_FragCoord.xy / screen_resolution.xy);
-	//vec4 pixelData = texture2D(sampler_tex, pixelScreenPos);
-	//vec2 texelSize = 1.0f / screen_resolution.xy;
-	//vec4 finalColour = calculateFXAA(pixelScreenPos, pixelData, texelSize);
-	//fragment_colour = finalColour;
-	fragment_colour = vec4(texture2D(sampler_tex, uvCoord).rgb, 1.0f);
+	vec2 pixelScreenPos = (gl_FragCoord.xy / screen_resolution.xy);
+	vec4 pixelData = texture2D(sampler_tex, pixelScreenPos);
+	vec2 texelSize = 1.0f / screen_resolution.xy;
+	vec4 finalColour = calculateFXAA(pixelScreenPos, pixelData, texelSize);
+	finalColour = vec4(finalColour.xyz, 1.0f);
+	fragment_colour = finalColour;
+	//fragment_colour = vec4(texture2D(sampler_tex, uvCoord).rgb, 1.0f);
+	//fragment_colour = vec4(pixelScreenPos, 0.0f, 1.0f);
 }

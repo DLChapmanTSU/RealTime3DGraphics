@@ -416,7 +416,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	// Clear buffers from previous frame
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// TODO: Compute viewport and projection matrix
@@ -492,7 +492,8 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	if (m_antiAliasing)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_rectAAFBO);
-		
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(m_fxaaProgram);
 		glBindVertexArray(m_VAO);
 		glDisable(GL_CULL_FACE);
@@ -515,8 +516,8 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 
 		//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
 
-		//glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		//glClear(GL_COLOR_BUFFER_BIT);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(m_rectProgram);
 		glBindVertexArray(m_VAO);
@@ -540,8 +541,8 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 
 		//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
 
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(m_rectProgram);
 		glBindVertexArray(m_VAO);
@@ -557,6 +558,10 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		//glNamedFramebufferDrawBuffer(m_rectFBO, GL_FRONT_AND_BACK);
 		glBindVertexArray(0);
+		glBindFramebuffer(GL_FRAMEBUFFER, m_rectAAFBO);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	
 	
@@ -565,6 +570,8 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	glEnable(GL_CULL_FACE);
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LEQUAL);
+
+	
 
 	/*glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
