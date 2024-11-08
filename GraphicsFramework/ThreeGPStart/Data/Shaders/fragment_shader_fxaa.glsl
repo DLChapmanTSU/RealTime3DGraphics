@@ -6,7 +6,13 @@ in vec2 uvCoord;
 
 out vec4 fragment_colour;
 
-float targetContrast = 0.05f;
+float targetContrast = 0.01f;
+
+float weightsRowOne[5] = float[5](1.0f, 1.25f, 2.5f, 1.25f, 1.0f);
+float weightsRowTwo[5] = float[5](1.0f, 2.5f, 3.0f, 2.5f, 1.0f);
+float weightsRowThree[5] = float[5](2.5f, 3.0f, 3.5f, 3.0f, 2.5f);
+float weightsRowFour[5] = float[5](1.0f, 2.5f, 3.0f, 2.5f, 1.0f);
+float weightsRowFive[5] = float[5](1.0f, 1.25f, 2.5f, 1.25f, 1.0f);
 
 struct LuminanceSample
 {
@@ -40,6 +46,76 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	vec4 rgbSE = pixel;
 	vec4 rgbSW = pixel;
 	vec4 rgbNW = pixel;
+
+	//Need to use a mat4 instead. This is too messy
+	//Need to define a mat4 to aply weights
+
+	vec4 coloursRowOne[5];
+	vec4 coloursRowTwo[5];
+	vec4 coloursRowThree[5];
+	vec4 coloursRowFour[5];
+	vec4 coloursRowFive[5];
+	coloursRowThree[2] = pixel * weightsRowThree[2];
+
+	float currentContrast = 0.0f;
+	float baseLuminance = calculateLuminance(pixel);
+
+	for (int i = 0; i < 5; i++)
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			if (i == 2 && j == 2)
+			{
+				continue;
+			}
+			vec2 offset = vec2((i - 2) * texSize.x, (j - 2) * texSize.y);
+			vec2 pixPos = pos + offset;
+			vec4 pixColour = texture2D(sampler_tex, pixPos);
+			float pixLum = calculateLuminance(pixColour);
+
+			if (abs(pixLum - baseLuminance) > currentContrast)
+			{
+				currentContrast = abs(pixLum - baseLuminance);
+			}
+
+			switch (i)
+			{
+			case 0:
+				coloursRowOne[j] = texture2D(sampler_tex, pixPos) * weightsRowOne[j];
+				break;
+			case 1:
+				coloursRowTwo[j] = texture2D(sampler_tex, pixPos) * weightsRowTwo[j];
+				break;
+			case 2:
+				coloursRowThree[j] = texture2D(sampler_tex, pixPos) * weightsRowThree[j];
+				break;
+			case 3:
+				coloursRowFour[j] = texture2D(sampler_tex, pixPos) * weightsRowFour[j];
+				break;
+			case 4:
+				coloursRowFive[j] = texture2D(sampler_tex, pixPos) * weightsRowFive[j];
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	if (currentContrast < targetContrast)
+	{
+		return pixel;
+	}
+
+	vec4 finalColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	float sumOfWeights = 0.0f;
+
+	for (int i = 0; i < 5; i++)
+	{
+		finalColour += coloursRowOne[i] + coloursRowTwo[i] + coloursRowThree[i] + coloursRowFour[i] + coloursRowFive[i];
+		sumOfWeights += weightsRowOne[i] + weightsRowTwo[i] + weightsRowThree[i] + weightsRowFour[i] + weightsRowFive[i];
+	}
+
+	return finalColour / sumOfWeights;
 
 	if (pos.y + texSize.y > 1.0f)
 	{
