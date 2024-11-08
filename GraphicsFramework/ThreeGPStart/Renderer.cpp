@@ -512,6 +512,26 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glUseProgram(m_fxaaProgram);
+		glBindVertexArray(m_VAO);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_EQUAL);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		resolutionId = glGetUniformLocation(m_fxaaProgram, "screen_resolution");
+		glUniform2fv(resolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
+
+		glBindTexture(GL_TEXTURE_2D, m_rectTexture);
+		//glActiveTexture(GL_TEXTURE0 + 2);
+		//glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
+		glUniform1i(glGetUniformLocation(m_fxaaProgram, "sampler_tex"), 0);
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		//glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
