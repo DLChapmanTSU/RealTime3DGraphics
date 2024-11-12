@@ -7,7 +7,7 @@ in vec2 uvCoord;
 out vec4 fragment_colour;
 
 float targetContrast = 0.01f;
-int stepLimit = 12;
+int stepLimit = 24;
 
 float weightsRowOne[5] = float[5](1.0f, 1.25f, 2.0f, 1.25f, 1.0f);
 float weightsRowTwo[5] = float[5](1.0f, 1.5f, 2.0f, 1.5f, 1.0f);
@@ -115,10 +115,10 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 		}
 	}
 
-	if (currentContrast < targetContrast)
-	{
-		return pixel;
-	}
+	//if (currentContrast < targetContrast)
+	//{
+	//	return pixel;
+	//}
 
 	//TODO - Edge Detection
 	//https://blog.simonrodriguez.fr/articles/2016/07/implementing_fxaa.html
@@ -136,7 +136,7 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	bool isOneLarger = abs(neighbourOneDiff) >= abs(neighbourTwoDiff);
 
 	float scaled = 0.25f * max(abs(neighbourOneDiff), abs(neighbourTwoDiff));
-	float stepLength = isHorizontal ? texSize.x : texSize.y;
+	float stepLength = isHorizontal ? texSize.y : texSize.x;
 
 	float averageLumaInDir = 0.0f;
 
@@ -147,6 +147,7 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	}
 	else
 	{
+		//stepLength = -stepLength;
 		averageLumaInDir = (neighbourTwoLuma + luminanceRowThree[2]) / 2.0f;
 	}
 
@@ -154,11 +155,11 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 
 	if (isHorizontal)
 	{
-		currentPos.x += stepLength * 0.5f;
+		currentPos.y += stepLength * 0.5f;
 	}
 	else
 	{
-		currentPos.y += stepLength * 0.5f;
+		currentPos.x += stepLength * 0.5f;
 	}
 
 	vec2 offset = isHorizontal ? vec2(texSize.x, 0.0f) : vec2(0.0f, texSize.y);
@@ -166,13 +167,14 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	float sumOfWeights = 0.0f;
 	bool endOneReached = false;
 	bool endTwoReached = false;
+	bool bothReached;
 	int stepCount = 1;
 	float lumaEndOne = 0.0f;
 	float lumaEndTwo = 0.0f;
 	vec2 dirEndOne = currentPos;
 	vec2 dirEndTwo = currentPos;
 
-	while (stepCount <= stepLimit && (!endOneReached || !endTwoReached))
+	while (stepCount <= stepLimit && !bothReached)
 	{
 		if (!endOneReached)
 		{
@@ -189,11 +191,12 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 
 		endOneReached = abs(lumaEndOne) >= scaled;
 		endTwoReached = abs(lumaEndTwo) >= scaled;
+		bothReached = endOneReached && endTwoReached;
 		stepCount++;
 	}
 
-	float distToOne = distance(currentPos, dirEndOne);
-	float distToTwo = distance(currentPos, dirEndTwo);
+	float distToOne = isHorizontal ? (currentPos.x - dirEndOne.x) : (currentPos.y - dirEndOne.y);
+	float distToTwo = isHorizontal ? (dirEndTwo.x - currentPos.x) : (dirEndTwo.y - currentPos.y);
 	bool isDirOne = distToOne < distToTwo;
 	float finalDist = min(distToOne, distToTwo);
 	float edgeLength = distToOne + distToTwo;
@@ -202,7 +205,7 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	bool isVarCorrect = ((isDirOne ? lumaEndOne : lumaEndTwo) < 0.0f) != isMidSmaller;
 	float offsetFinal = isVarCorrect ? pixOffset : 0.0f;
 
-	vec2 blurredUv = pos;
+	vec2 blurredUv = currentPos;
 	if (isHorizontal)
 		blurredUv.y += offsetFinal * stepLength;
 	else
