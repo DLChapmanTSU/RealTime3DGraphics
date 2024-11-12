@@ -37,7 +37,7 @@ float calculateLuminance(vec4 color)
 
 vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 {
-	LuminanceSample luminanceSample;
+	/*LuminanceSample luminanceSample;
 	luminanceSample.m = calculateLuminance(pixel);
 	vec4 rgbN = pixel;
 	vec4 rgbS = pixel;
@@ -46,7 +46,7 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	vec4 rgbNE = pixel;
 	vec4 rgbSE = pixel;
 	vec4 rgbSW = pixel;
-	vec4 rgbNW = pixel;
+	vec4 rgbNW = pixel;*/
 
 	//Need to use a mat4 instead. This is too messy
 	//Need to define a mat4 to aply weights
@@ -90,23 +90,23 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 			switch (i)
 			{
 			case 0:
-				coloursRowOne[j] = texture2D(sampler_tex, pixPos) * weightsRowOne[j];
+				coloursRowOne[j] = texture2D(sampler_tex, pixPos);
 				luminanceRowOne[j] = pixLum;
 				break;
 			case 1:
-				coloursRowTwo[j] = texture2D(sampler_tex, pixPos) * weightsRowTwo[j];
+				coloursRowTwo[j] = texture2D(sampler_tex, pixPos);
 				luminanceRowTwo[j] = pixLum;
 				break;
 			case 2:
-				coloursRowThree[j] = texture2D(sampler_tex, pixPos) * weightsRowThree[j];
+				coloursRowThree[j] = texture2D(sampler_tex, pixPos);
 				luminanceRowThree[j] = pixLum;
 				break;
 			case 3:
-				coloursRowFour[j] = texture2D(sampler_tex, pixPos) * weightsRowFour[j];
+				coloursRowFour[j] = texture2D(sampler_tex, pixPos);
 				luminanceRowFour[j] = pixLum;
 				break;
 			case 4:
-				coloursRowFive[j] = texture2D(sampler_tex, pixPos) * weightsRowFive[j];
+				coloursRowFive[j] = texture2D(sampler_tex, pixPos);
 				luminanceRowFive[j] = pixLum;
 				break;
 			default:
@@ -164,7 +164,7 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 
 	vec2 offset = isHorizontal ? vec2(texSize.x, 0.0f) : vec2(0.0f, texSize.y);
 
-	float sumOfWeights = 0.0f;
+	
 	bool endOneReached = false;
 	bool endTwoReached = false;
 	bool bothReached;
@@ -178,14 +178,15 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	{
 		if (!endOneReached)
 		{
-			dirEndOne -= offset;
 			lumaEndOne = calculateLuminance(texture2D(sampler_tex, dirEndOne));
+			lumaEndOne -= averageLumaInDir;
 		}
 
 		if (!endTwoReached)
 		{
-			dirEndTwo += offset;
 			lumaEndTwo = calculateLuminance(texture2D(sampler_tex, dirEndTwo));
+			lumaEndTwo -= averageLumaInDir;
+			dirEndTwo += offset;
 		}
 			
 
@@ -193,6 +194,12 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 		endTwoReached = abs(lumaEndTwo) >= scaled;
 		bothReached = endOneReached && endTwoReached;
 		stepCount++;
+
+		if (!endOneReached)
+			dirEndOne -= offset;
+
+		if (!endTwoReached)
+			dirEndTwo += offset;
 	}
 
 	float distToOne = isHorizontal ? (currentPos.x - dirEndOne.x) : (currentPos.y - dirEndOne.y);
@@ -204,6 +211,28 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	bool isMidSmaller = luminanceRowThree[2] < averageLumaInDir;
 	bool isVarCorrect = ((isDirOne ? lumaEndOne : lumaEndTwo) < 0.0f) != isMidSmaller;
 	float offsetFinal = isVarCorrect ? pixOffset : 0.0f;
+
+	//subpixel stuff
+	float surroundingLuma = luminanceRowTwo[1] + luminanceRowTwo[2] + luminanceRowTwo[3] +
+							luminanceRowThree[1] + luminanceRowThree[3] + 
+							luminanceRowFour[1] + luminanceRowFour[2] + luminanceRowFour[3];
+	//float sumOfWeights = 0.0f;
+
+	/*for (int i = 0; i < 5; i++)
+	{
+		if (i == 2)
+			surroundingLuma += luminanceRowOne[i] + luminanceRowTwo[i] + luminanceRowFour[i] + luminanceRowFive[i];
+		else
+			surroundingLuma += luminanceRowOne[i] + luminanceRowTwo[i] + luminanceRowThree[i] + luminanceRowFour[i] + luminanceRowFive[i];
+		//sumOfWeights += weightsRowOne[i] + weightsRowTwo[i] + weightsRowThree[i] + weightsRowFour[i] + weightsRowFive[i];
+	}*/
+
+	surroundingLuma *= 2.0f;
+	surroundingLuma /= 12.0f;
+	float subPixelOffset1 = clamp(abs(surroundingLuma - luminanceRowThree[2]) / currentContrast, 0.0, 1.0);
+	float subPixelOffset2 = (-2.0 * subPixelOffset1 + 3.0) * subPixelOffset1 * subPixelOffset1;
+	float subPixelOffsetFinal = subPixelOffset2 * subPixelOffset2 * 0.75f;
+	offsetFinal = max(offsetFinal, subPixelOffsetFinal);
 
 	vec2 blurredUv = currentPos;
 	if (isHorizontal)
@@ -277,11 +306,6 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	//vec4 finalColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	
 
-	//for (int i = 0; i < 5; i++)
-	//{
-	//	finalColour += coloursRowOne[i] + coloursRowTwo[i] + coloursRowThree[i] + coloursRowFour[i] + coloursRowFive[i];
-	//	sumOfWeights += weightsRowOne[i] + weightsRowTwo[i] + weightsRowThree[i] + weightsRowFour[i] + weightsRowFive[i];
-	//}
 
 	//return finalColour / sumOfWeights;
 }
