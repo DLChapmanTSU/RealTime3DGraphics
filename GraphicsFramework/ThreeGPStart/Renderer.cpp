@@ -93,6 +93,9 @@ bool Renderer::InitialiseGeometry()
 	if (!CreateProgram(m_fxaaProgram, "Data/Shaders/vertex_shader_fxaa.glsl", "Data/Shaders/fragment_shader_fxaa.glsl"))
 		return false;
 
+	if (!CreateProgram(m_depthProgram, "Data/Shaders/vertex_shader_depth.glsl", "Data/Shaders/fragment_shader_depth.glsl"))
+		return false;
+
 	// Helpers has an object for loading 3D geometry, supports most types
 	
 	// Load in the jeep
@@ -364,6 +367,34 @@ bool Renderer::InitialiseGeometry()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	//Framebuffer setup for depth test texture
+	glGenFramebuffers(1, &m_rectDepthFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectDepthFBO);
+
+
+	glGenTextures(1, &m_rectDepthTexture);
+	glBindTexture(GL_TEXTURE_2D, m_rectDepthTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1280, 720, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_rectDepthTexture, 0);
+
+	glDrawBuffer(GL_NONE);
+
+	//unsigned int depthrbo;
+	//glGenRenderbuffers(1, &depthrbo);
+	//glBindRenderbuffer(GL_RENDERBUFFER, depthrbo);
+	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 1280, 720);
+
+	//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrbo);
+
+	if (!glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		return false;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	const float windowVerts[] = { -1.0f, 1.0f, 0.3f, -1.0f,-1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, 1.0f, 0.3f, -1.0f, 1.0f, 0.3f };
 	const float windowQuadUVs[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
 
@@ -464,6 +495,23 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	//	model->Render(m_program, combined_xform, tempXForm, m_lights, camera);
 	//}
 
+	//depth test program calls
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectDepthFBO);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(m_depthProgram);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_BLEND);
+
+	for (std::shared_ptr<Model>& model : m_models)
+	{
+		model->RenderDepthPass(m_depthProgram, combined_xform, tempXForm);
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
+
 	glUseProgram(m_ambientProgram);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -486,8 +534,6 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	{
 		model->Render(m_lightProgram, combined_xform, tempXForm, m_lights, camera);
 	}
-
-	
 
 	if (m_antiAliasing)
 	{
@@ -551,7 +597,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_BLEND);
-		glBindTexture(GL_TEXTURE_2D, m_rectTexture);
+		glBindTexture(GL_TEXTURE_2D, m_rectDepthTexture);
 		//glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
 
 

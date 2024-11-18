@@ -176,5 +176,11 @@
     <None Include="Data\Shaders\vertex_shader_fxaa.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Data\Shaders\vertex_shader_depth.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Data\Shaders\fragment_shader_depth.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

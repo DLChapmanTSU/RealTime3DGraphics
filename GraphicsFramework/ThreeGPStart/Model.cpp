@@ -238,6 +238,25 @@ void Model::RenderAmbientPass(GLuint& p, glm::mat4 c, glm::mat4 m)
 	}
 }
 
+void Model::RenderDepthPass(GLuint& p, glm::mat4 c, glm::mat4 m)
+{
+	for (size_t m = 0; m < m_meshes.size(); m++) {
+		GLuint combined_xform_id = glGetUniformLocation(p, "combined_xform");
+		glUniformMatrix4fv(combined_xform_id, 1, GL_FALSE, glm::value_ptr(c));
+
+		// Send the model matrix to the shader in a uniform
+		GLuint model_xform_id = glGetUniformLocation(p, "model_xform");
+		glm::mat4 translation = glm::translate(glm::mat4(1), m_modelWorldPosition);
+		glm::mat4 newWorldPosition = translation * m_meshes[m].m_modelXForm;
+		glUniformMatrix4fv(model_xform_id, 1, GL_FALSE, glm::value_ptr(newWorldPosition));
+
+
+		glBindVertexArray(m_meshes[m].m_VAO);
+		glDrawElements(GL_TRIANGLES, (GLsizei)m_meshes[m].m_elementCount, GL_UNSIGNED_INT, (void*)0);
+		glBindVertexArray(0);
+	}
+}
+
 void Model::Translate(glm::vec3& t)
 {
 	m_modelWorldPosition += t;
