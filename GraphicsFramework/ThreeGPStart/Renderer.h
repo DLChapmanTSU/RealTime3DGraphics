@@ -21,12 +21,15 @@ private:
 	GLuint m_lightProgram{ 0 };
 	GLuint m_fxaaProgram{ 0 };
 	GLuint m_depthProgram{ 0 };
+	GLuint m_dofProgram{ 0 };
 	GLuint m_rectFBO{ 0 };
 	GLuint m_rectTexture{ 0 };
 	GLuint m_rectAAFBO{ 0 };
+	GLuint m_rectDOFFBO{ 0 };
 	GLuint m_rectAATexture{ 0 };
 	GLuint m_rectDepthFBO{ 0 };
 	GLuint m_rectDepthTexture{ 0 };
+	GLuint m_rectDOFTexture{ 0 };
 
 	// Vertex Array Object to wrap all render settings
 	GLuint m_VAO{ 0 };

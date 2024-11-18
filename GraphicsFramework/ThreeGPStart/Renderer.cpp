@@ -96,6 +96,9 @@ bool Renderer::InitialiseGeometry()
 	if (!CreateProgram(m_depthProgram, "Data/Shaders/vertex_shader_depth.glsl", "Data/Shaders/fragment_shader_depth.glsl"))
 		return false;
 
+	if (!CreateProgram(m_dofProgram, "Data/Shaders/vertex_shader_dof.glsl", "Data/Shaders/fragment_shader_dof.glsl"))
+		return false;
+
 	// Helpers has an object for loading 3D geometry, supports most types
 	
 	// Load in the jeep
@@ -367,6 +370,32 @@ bool Renderer::InitialiseGeometry()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	glGenFramebuffers(1, &m_rectDOFFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectDOFFBO);
+
+
+	glGenTextures(1, &m_rectDOFTexture);
+	glBindTexture(GL_TEXTURE_2D, m_rectDOFTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 720, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glBindTexture(GL_TEXTURE_2D, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_rectDOFTexture, 0);
+
+	unsigned int dofrbo;
+	glGenRenderbuffers(1, &dofrbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, dofrbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+
+
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_rectTexture, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, dofrbo);
+
+	if (!glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		return false;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	//Framebuffer setup for depth test texture
 	glGenFramebuffers(1, &m_rectDepthFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_rectDepthFBO);
@@ -535,6 +564,28 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		model->Render(m_lightProgram, combined_xform, tempXForm, m_lights, camera);
 	}
 
+	//dof blur
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectDOFFBO);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(m_dofProgram);
+	glBindVertexArray(m_VAO);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+	glDepthFunc(GL_EQUAL);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+
+	glBindTexture(GL_TEXTURE_2D, m_rectDepthTexture);
+	//glActiveTexture(GL_TEXTURE0 + 2);
+	//glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
+	glUniform1i(glGetUniformLocation(m_dofProgram, "sampler_depth_tex"), 0);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	if (m_antiAliasing)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_rectAAFBO);
@@ -551,7 +602,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		GLuint resolutionId = glGetUniformLocation(m_fxaaProgram, "screen_resolution");
 		glUniform2fv(resolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
 
-		glBindTexture(GL_TEXTURE_2D, m_rectTexture);
+		glBindTexture(GL_TEXTURE_2D, m_rectDOFTexture);
 		//glActiveTexture(GL_TEXTURE0 + 2);
 		//glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
 		glUniform1i(glGetUniformLocation(m_fxaaProgram, "sampler_tex"), 0);
@@ -597,7 +648,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_BLEND);
-		glBindTexture(GL_TEXTURE_2D, m_rectDepthTexture);
+		glBindTexture(GL_TEXTURE_2D, m_rectTexture);
 		//glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
 
 
