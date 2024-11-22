@@ -32,11 +32,11 @@ void Renderer::DefineGUI()
 
 		ImGui::Checkbox("FXAA", &m_antiAliasing);
 
-		ImGui::SliderFloat("Aperture", &m_aperture, 0.1f, 100.0f);
+		ImGui::SliderFloat("Aperture", &m_aperture, 0.1f, 1.0f);
 
-		ImGui::SliderFloat("Focal Length", &m_focalLength, 0.1f, 100.0f);
+		ImGui::SliderFloat("Focal Length", &m_focalLength, 0.1f, 1.0f);
 
-		ImGui::SliderFloat("Plane In Focus", &m_planeInFocus, 0.1f, 100.0f);
+		ImGui::SliderFloat("Plane In Focus", &m_planeInFocus, 0.1f, 1.0f);
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		
