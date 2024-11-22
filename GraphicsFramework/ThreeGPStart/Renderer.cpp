@@ -32,6 +32,12 @@ void Renderer::DefineGUI()
 
 		ImGui::Checkbox("FXAA", &m_antiAliasing);
 
+		ImGui::SliderFloat("Aperture", &m_aperture, 0.1f, 100.0f);
+
+		ImGui::SliderFloat("Focal Length", &m_focalLength, 0.1f, 100.0f);
+
+		ImGui::SliderFloat("Plane In Focus", &m_planeInFocus, 0.1f, 100.0f);
+
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		
 		ImGui::End();
@@ -578,9 +584,18 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	glBlendFunc(GL_ONE, GL_ONE);
 
 	glBindTexture(GL_TEXTURE_2D, m_rectDepthTexture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m_rectTexture);
+	glActiveTexture(GL_TEXTURE0);
 	//glActiveTexture(GL_TEXTURE0 + 2);
 	//glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
 	glUniform1i(glGetUniformLocation(m_dofProgram, "sampler_depth_tex"), 0);
+	glUniform1i(glGetUniformLocation(m_dofProgram, "sampler_colour_tex"), 1);
+	glUniform1f(glGetUniformLocation(m_dofProgram, "aperture"), m_aperture);
+	glUniform1f(glGetUniformLocation(m_dofProgram, "focalLength"), m_focalLength);
+	glUniform1f(glGetUniformLocation(m_dofProgram, "planeInFocus"), m_planeInFocus);
+	GLuint depthResolutionId = glGetUniformLocation(m_fxaaProgram, "screen_resolution");
+	glUniform2fv(depthResolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 

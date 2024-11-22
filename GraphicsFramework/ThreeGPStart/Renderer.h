@@ -39,6 +39,9 @@ private:
 
 	bool m_wireframe{ false };
 	bool m_antiAliasing{ false };
+	float m_aperture = 5.0f;
+	float m_focalLength = 2.0f;
+	float m_planeInFocus = 5.0f;
 
 	glm::mat4 tempXForm = glm::mat4(1);
 	int tempElementCount = 0;
