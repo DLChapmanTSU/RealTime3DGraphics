@@ -639,7 +639,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_BLEND);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
+		glBindTexture(GL_TEXTURE_2D, m_rectDOFTexture);
 		//glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
 
 

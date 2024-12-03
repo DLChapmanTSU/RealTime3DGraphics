@@ -10,7 +10,7 @@ in vec2 uvCoord;
 
 out vec4 fragment_colour;
 
-float near = 0.01f;
+float near = 1.0f;
 float far = 100.0f;
 
 
@@ -34,40 +34,48 @@ void main(void)
 
 	float rawDepth = texture2D(sampler_depth_tex, uvCoord).r;
 	float finalDepth = LinearDepth(rawDepth);
+	vec4 pixelData = texture2D(sampler_colour_tex, uvCoord);
+	vec2 texelSize = 1.0f / screen_resolution.xy;
+
+	if (finalDepth <= 0.0f)
+	{
+		fragment_colour = pixelData;
+		return;
+	}
 
 	float CoC = CircleOfConfusion(finalDepth);
 
 	//blur here
 
-	vec4 pixelData = texture2D(sampler_colour_tex, uvCoord);
-	vec2 texelSize = 1.0f / screen_resolution.xy;
+	
 
 	int count = 0;
 	vec4 combinedColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	/*if (CoC == 0.0f)
+	if (CoC <= 0.0f)
 	{
 		fragment_colour = pixelData;
 	}
 	else
 	{
-		vec4 left = texture2D(sampler_colour_tex, pixelScreenPos + vec2(-texelSize.x, 0));
-		vec4 right = texture2D(sampler_colour_tex, pixelScreenPos + vec2(texelSize.x, 0));
-		vec4 up = texture2D(sampler_colour_tex, pixelScreenPos + vec2(0, texelSize.y));
-		vec4 down = texture2D(sampler_colour_tex, pixelScreenPos + vec2(0, -texelSize.y));
-		vec4 upLeft = texture2D(sampler_colour_tex, pixelScreenPos + vec2(-texelSize.x, texelSize.y));
-		vec4 upRight = texture2D(sampler_colour_tex, pixelScreenPos + vec2(texelSize.x, texelSize.y));
-		vec4 downLeft = texture2D(sampler_colour_tex, pixelScreenPos + vec2(-texelSize.x, -texelSize.y));
-		vec4 downRight = texture2D(sampler_colour_tex, pixelScreenPos + vec2(texelSize.x, -texelSize.y));
+		vec4 left = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(-0.0001, 0) * CoC));
+		vec4 right = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(0.0001, 0) * CoC));
+		vec4 up = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(0, 0.0001) * CoC));
+		vec4 down = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(0, -0.0001) * CoC));
+		vec4 upLeft = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(-0.00005, 0.00005) * CoC));
+		vec4 upRight = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(0.00005, 0.00005) * CoC));
+		vec4 downLeft = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(-0.00005, -0.00005) * CoC));
+		vec4 downRight = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(0.00005, -0.00005) * CoC));
 	
-		vec4 averageColour = (left + right + up + down + upLeft + upRight + downLeft + downRight) / 8.0f;
+		vec4 averageColour = (pixelData + left + right + up + down + upLeft + upRight + downLeft + downRight) / 9.0f;
 
-		fragment_colour = (pixelData + (averageColour * CoC)) / (2.0f + CoC);
-		//fragment_colour = averageColour;
-	}*/
+		//fragment_colour = (pixelData + (averageColour * CoC)) / (2.0f + CoC);
+		fragment_colour = averageColour;
+	}
 
 	
-
+	/*if (CoC > 1.0f)
+		CoC = 5.0f;
 
 
 	for (float step = -CoC; step < CoC; step += texelSize.x)
@@ -80,10 +88,10 @@ void main(void)
 	{
 		combinedColour += texture2D(sampler_colour_tex, vec2(gl_FragCoord.x, gl_FragCoord.y + (step * texelSize.y)));
 		count++;
-	}
+	}*/
 
 	//fragment_colour = vec4(finalDepth, finalDepth, finalDepth, 1.0f);
-	fragment_colour = combinedColour / count;
+	//fragment_colour = combinedColour / count;
 	//fragment_colour = vec4(CoC, 0.0f, 0.0f, 1.0f);
 	//fragment_colour = texture2D(sampler_depth_tex, uvCoord);
 }
