@@ -594,7 +594,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	glUniform1f(glGetUniformLocation(m_dofProgram, "aperture"), m_aperture);
 	glUniform1f(glGetUniformLocation(m_dofProgram, "focalLength"), m_focalLength);
 	glUniform1f(glGetUniformLocation(m_dofProgram, "planeInFocus"), m_planeInFocus);
-	GLuint depthResolutionId = glGetUniformLocation(m_fxaaProgram, "screen_resolution");
+	GLuint depthResolutionId = glGetUniformLocation(m_dofProgram, "screen_resolution");
 	glUniform2fv(depthResolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
