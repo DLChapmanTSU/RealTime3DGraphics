@@ -1,6 +1,7 @@
 #version 330
 uniform sampler2D sampler_depth_tex;
 uniform sampler2D sampler_colour_tex;
+uniform sampler2D sampler_accum_colours_tex[12];
 uniform vec2 screen_resolution;
 uniform float aperture;
 uniform float focalLength;
@@ -12,6 +13,7 @@ out vec4 fragment_colour;
 
 float near = 1.0f;
 float far = 100.0f;
+float circleOfConfusionCap = 10.0f;
 
 
 
@@ -68,16 +70,37 @@ void main(void)
 	}
 	else
 	{
-		vec4 left = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(-0.0001, 0) * CoC));
+		if (CoC > circleOfConfusionCap)
+			CoC = circleOfConfusionCap;
+		/*vec4 left = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(-0.0001, 0) * CoC));
 		vec4 right = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(0.0001, 0) * CoC));
 		vec4 up = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(0, 0.0001) * CoC));
 		vec4 down = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(0, -0.0001) * CoC));
 		vec4 upLeft = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(-0.00005, 0.00005) * CoC));
 		vec4 upRight = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(0.00005, 0.00005) * CoC));
 		vec4 downLeft = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(-0.00005, -0.00005) * CoC));
-		vec4 downRight = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(0.00005, -0.00005) * CoC));
+		vec4 downRight = texture2D(sampler_colour_tex, pixelScreenPos + (vec2(0.00005, -0.00005) * CoC));*/
+
+		vec4 accumulation = vec4(0);
+
+		for (int i = 0; i < 12; i++)
+		{
+			accumulation += texture2D(sampler_accum_colours_tex[i], pixelScreenPos) * CoC;
+		}
+
+		//accumulation *= CoC;
 	
-		vec4 averageColour = (pixelData + left + right + up + down + upLeft + upRight + downLeft + downRight) / 9.0f;
+		vec4 averageColour = accumulation / 12.0f;
+		averageColour = (averageColour / circleOfConfusionCap) * CoC;
+		averageColour += pixelData;
+		averageColour /= 2.0f;
+
+		if (length(averageColour) != length(pixelData))
+		{
+			averageColour = normalize(averageColour);
+			averageColour *= length(pixelData);
+			averageColour.w = pixelData.w;
+		}
 
 		//fragment_colour = (pixelData + (averageColour * CoC)) / (2.0f + CoC);
 		fragment_colour = averageColour;

@@ -31,6 +31,12 @@ private:
 	GLuint m_rectDepthTexture{ 0 };
 	GLuint m_rectDOFTexture{ 0 };
 
+	//Extra textures for extra light passes
+	GLuint m_accumulationSamples[12]{ 0 };
+	GLuint m_accumulationFBO[12]{ 0 };
+	//Camera offsets for extra light passes
+	std::pair<float, float> m_cameraOffsets[12];
+
 	// Vertex Array Object to wrap all render settings
 	GLuint m_VAO{ 0 };
 
