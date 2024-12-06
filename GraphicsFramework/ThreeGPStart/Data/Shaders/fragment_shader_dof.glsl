@@ -23,8 +23,18 @@ float LinearDepth(float depth)
 
 float CircleOfConfusion(float depth)
 {
+	float fLength = (1 / depth) + (1 / focalLength);
+	fLength = fLength * fLength;
+	float CoCScale = (aperture * fLength * planeInFocus * (far - near)) /
+		((planeInFocus - fLength) * near * far);
+	float CoCBias = (aperture * fLength * (near - planeInFocus)) /
+		((planeInFocus * fLength) * near);
+
+	
 	float z = 1.0f / ((1.0f / near) - (((far - near) / (near * far)) * depth));
-	return abs(aperture * (focalLength * (depth - planeInFocus)) / (depth * (planeInFocus - focalLength)));
+	return abs(z * CoCScale + CoCBias);
+	
+	//return abs(aperture * (fLength * (planeInFocus - depth)) / (depth * (planeInFocus - fLength)));
 	//return aperture * ((z - planeInFocus) / z);
 }
 
