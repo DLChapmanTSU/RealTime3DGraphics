@@ -10,6 +10,8 @@ class Model;
 struct Light;
 class Skybox;
 
+using namespace Helpers;
+
 class Renderer
 {
 private:
@@ -66,6 +68,6 @@ public:
 	bool InitialiseGeometry();
 
 	// Render the scene
-	void Render(const Helpers::Camera& camera, float deltaTime);
+	void Render(Camera& camera, float deltaTime);
 };
 

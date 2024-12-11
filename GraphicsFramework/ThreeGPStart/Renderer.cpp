@@ -5,6 +5,8 @@
 #include "Terrain.h"
 #include "Skybox.h"
 
+using namespace Helpers;
+
 Renderer::Renderer() 
 {
 
@@ -435,6 +437,8 @@ bool Renderer::InitialiseGeometry()
 		glGenFramebuffers(1, &m_accumulationFBO[i]);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_accumulationFBO[i]);
 
+		glActiveTexture(GL_TEXTURE0 + 20 + i);
+
 		glGenTextures(1, &m_accumulationSamples[i]);
 		glBindTexture(GL_TEXTURE_2D, m_accumulationSamples[i]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 720, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
@@ -447,6 +451,7 @@ bool Renderer::InitialiseGeometry()
 		glGenRenderbuffers(1, &sampleRBO);
 		glBindRenderbuffer(GL_RENDERBUFFER, sampleRBO);
 		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sampleRBO);
 
 		if (!glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
 			return false;
@@ -454,30 +459,30 @@ bool Renderer::InitialiseGeometry()
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	m_cameraOffsets[0].first = 0.001f;
-	m_cameraOffsets[0].second = 0.0f;
-	m_cameraOffsets[1].first = 0.001f;
-	m_cameraOffsets[1].second = 0.001f;
+	m_cameraOffsets[0].first = 0.1f;
+	m_cameraOffsets[0].second = 0.f;
+	m_cameraOffsets[1].first = 0.1f;
+	m_cameraOffsets[1].second = 0.1f;
 	m_cameraOffsets[2].first = 0.0f;
-	m_cameraOffsets[2].second = 0.001f;
-	m_cameraOffsets[3].first = -0.001f;
-	m_cameraOffsets[3].second = 0.001f;
-	m_cameraOffsets[4].first = -0.001f;
+	m_cameraOffsets[2].second = 0.1f;
+	m_cameraOffsets[3].first = -0.1f;
+	m_cameraOffsets[3].second = 0.1f;
+	m_cameraOffsets[4].first = -0.1f;
 	m_cameraOffsets[4].second = 0.0f;
-	m_cameraOffsets[5].first = -0.001f;
-	m_cameraOffsets[5].second = -0.001f;
+	m_cameraOffsets[5].first = -0.1f;
+	m_cameraOffsets[5].second = -0.1f;
 	m_cameraOffsets[6].first = 0.0f;
-	m_cameraOffsets[6].second = -0.001f;
-	m_cameraOffsets[7].first = 0.001f;
+	m_cameraOffsets[6].second = -0.1f;
+	m_cameraOffsets[7].first = 0.1f;
 	m_cameraOffsets[7].second = 0.0f;
-	m_cameraOffsets[8].first = 0.002f;
+	m_cameraOffsets[8].first = 0.2f;
 	m_cameraOffsets[8].second = 0.0f;
-	m_cameraOffsets[9].first = -0.002f;
+	m_cameraOffsets[9].first = -0.2f;
 	m_cameraOffsets[9].second = 0.0f;
 	m_cameraOffsets[10].first = 0.0f;
-	m_cameraOffsets[10].second = 0.002f;
+	m_cameraOffsets[10].second = 0.2f;
 	m_cameraOffsets[11].first = 0.0f;
-	m_cameraOffsets[11].second = -0.002f;
+	m_cameraOffsets[11].second = -0.2f;
 
 	const float windowVerts[] = { -1.0f, 1.0f, 0.3f, -1.0f,-1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, 1.0f, 0.3f, -1.0f, 1.0f, 0.3f };
 	const float windowQuadUVs[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
@@ -516,8 +521,9 @@ bool Renderer::InitialiseGeometry()
 }
 
 // Render the scene. Passed the delta time since last called.
-void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
+void Renderer::Render(Camera& camera, float deltaTime)
 {
+	glm::vec3 originalCameraPos = camera.GetPosition();
 	glUseProgram(m_skyProgram);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
 	// Configure pipeline settings
@@ -624,23 +630,48 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 		glBindFramebuffer(GL_FRAMEBUFFER, m_accumulationFBO[i]);
 
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glUseProgram(m_skyProgram);
-		glDisable(GL_DEPTH_TEST);
-		glDepthMask(GL_FALSE);
-		m_skybox->Render(m_skyProgram, sky_combined_xform);
+		//glUseProgram(m_skyProgram);
+		//glDisable(GL_DEPTH_TEST);
+		//glDepthMask(GL_FALSE);
+		//m_skybox->Render(m_skyProgram, sky_combined_xform);
+		//glEnable(GL_DEPTH_TEST);
+		//glDepthMask(GL_TRUE);
+
+		glUseProgram(m_ambientProgram);
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
-		glUseProgram(m_lightProgram);
+		glDepthFunc(GL_LEQUAL);
+		glDisable(GL_BLEND);
 
-		glm::mat4 sample_view_xform = glm::lookAt(camera.GetPosition() + (camera.GetRightVector() * m_cameraOffsets[i].first) + (camera.GetUpVector() * m_cameraOffsets[i].second), camera.GetPosition() + camera.GetLookVector(), camera.GetUpVector());
+		camera.SetPosition(camera.GetPosition() + (camera.GetRightVector() * m_cameraOffsets[i].first) + (camera.GetUpVector() * m_cameraOffsets[i].second));
+
+		glm::mat4 sample_view_xform = glm::lookAt(camera.GetPosition(), camera.GetPosition() + camera.GetLookVector(), camera.GetUpVector());
 		glm::mat4 sample_combined_xform = projection_xform * sample_view_xform;
+
+		for (std::shared_ptr<Model>& model : m_models)
+		{
+			model->RenderAmbientPass(m_ambientProgram, sample_combined_xform, tempXForm);
+		}
+
+		glUseProgram(m_lightProgram);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_EQUAL);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
 
 		for (std::shared_ptr<Model>& model : m_models)
 		{
 			model->Render(m_lightProgram, sample_combined_xform, tempXForm, m_lights, camera);
 		}
+
+		glEnable(GL_DEPTH_TEST);
+		//glEnable(GL_CULL_FACE);
+		glDisable(GL_BLEND);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LEQUAL);
 	}
 
 	//dof blur
@@ -672,7 +703,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 
 	for (size_t i = 0; i < 12; i++)
 	{
-		glActiveTexture(GL_TEXTURE2 + i);
+		glActiveTexture(GL_TEXTURE0 + 20 + i);
 		glBindTexture(GL_TEXTURE_2D, m_accumulationSamples[i]);
 		GLuint samplerId = glGetUniformLocation(m_dofProgram, std::string("sampler_accum_colours_tex[" + std::to_string(i) + "]").c_str());
 		glUniform1i(samplerId, m_accumulationSamples[i]);
@@ -765,8 +796,7 @@ void Renderer::Render(const Helpers::Camera& camera, float deltaTime)
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LEQUAL);
 
-	
-
+	camera.SetPosition(originalCameraPos);
 	/*glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rectFBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitNamedFramebuffer(m_rectFBO, 0, 0, 0, 800, 600, 0, 0, 800, 600, GL_COLOR_BUFFER_BIT, GL_NEAREST);
