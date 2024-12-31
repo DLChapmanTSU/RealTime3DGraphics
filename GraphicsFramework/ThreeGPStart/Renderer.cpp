@@ -32,7 +32,9 @@ void Renderer::DefineGUI()
 
 		ImGui::Checkbox("Wireframe", &m_wireframe);	// A checkbox linked to a member variable
 
-		ImGui::Checkbox("FXAA", &m_antiAliasing);
+		ImGui::Checkbox("FXAA", &m_isAntiAliasing);
+
+		ImGui::Checkbox("DOF", &m_isDepthOfField);
 
 		ImGui::SliderFloat("Aperture", &m_aperture, 0.1f, 100.0f);
 
@@ -404,6 +406,32 @@ bool Renderer::InitialiseGeometry()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	glGenFramebuffers(1, &m_rectDOFPassTwoFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectDOFPassTwoFBO);
+
+
+	glGenTextures(1, &m_rectDOFPassTwoTexture);
+	glBindTexture(GL_TEXTURE_2D, m_rectDOFPassTwoTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 720, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glBindTexture(GL_TEXTURE_2D, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_rectDOFPassTwoTexture, 0);
+
+	unsigned int dofpasstworbo;
+	glGenRenderbuffers(1, &dofpasstworbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, dofpasstworbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+
+
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_rectTexture, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, dofpasstworbo);
+
+	if (!glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		return false;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	//Framebuffer setup for depth test texture
 	glGenFramebuffers(1, &m_rectDepthFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_rectDepthFBO);
@@ -432,12 +460,12 @@ bool Renderer::InitialiseGeometry()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	for (int i = 0; i < 12; i++)
+	/*for (int i = 0; i < 12; i++)
 	{
 		glGenFramebuffers(1, &m_accumulationFBO[i]);
 		glBindFramebuffer(GL_FRAMEBUFFER, m_accumulationFBO[i]);
 
-		glActiveTexture(GL_TEXTURE0 + 20 + i);
+		//glActiveTexture(GL_TEXTURE0 + i);
 
 		glGenTextures(1, &m_accumulationSamples[i]);
 		glBindTexture(GL_TEXTURE_2D, m_accumulationSamples[i]);
@@ -459,30 +487,30 @@ bool Renderer::InitialiseGeometry()
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
-	m_cameraOffsets[0].first = 0.1f;
-	m_cameraOffsets[0].second = 0.f;
-	m_cameraOffsets[1].first = 0.1f;
-	m_cameraOffsets[1].second = 0.1f;
+	m_cameraOffsets[0].first = 1.1f;
+	m_cameraOffsets[0].second = 0.0f;
+	m_cameraOffsets[1].first = 1.1f;
+	m_cameraOffsets[1].second = 1.1f;
 	m_cameraOffsets[2].first = 0.0f;
-	m_cameraOffsets[2].second = 0.1f;
-	m_cameraOffsets[3].first = -0.1f;
-	m_cameraOffsets[3].second = 0.1f;
-	m_cameraOffsets[4].first = -0.1f;
+	m_cameraOffsets[2].second = 1.1f;
+	m_cameraOffsets[3].first = -1.1f;
+	m_cameraOffsets[3].second = 1.1f;
+	m_cameraOffsets[4].first = -1.1f;
 	m_cameraOffsets[4].second = 0.0f;
-	m_cameraOffsets[5].first = -0.1f;
-	m_cameraOffsets[5].second = -0.1f;
+	m_cameraOffsets[5].first = -1.1f;
+	m_cameraOffsets[5].second = -1.1f;
 	m_cameraOffsets[6].first = 0.0f;
-	m_cameraOffsets[6].second = -0.1f;
-	m_cameraOffsets[7].first = 0.1f;
+	m_cameraOffsets[6].second = -1.1f;
+	m_cameraOffsets[7].first = 1.1f;
 	m_cameraOffsets[7].second = 0.0f;
-	m_cameraOffsets[8].first = 0.2f;
+	m_cameraOffsets[8].first = 2.2f;
 	m_cameraOffsets[8].second = 0.0f;
-	m_cameraOffsets[9].first = -0.2f;
+	m_cameraOffsets[9].first = -2.2f;
 	m_cameraOffsets[9].second = 0.0f;
 	m_cameraOffsets[10].first = 0.0f;
-	m_cameraOffsets[10].second = 0.2f;
+	m_cameraOffsets[10].second = 2.2f;
 	m_cameraOffsets[11].first = 0.0f;
-	m_cameraOffsets[11].second = -0.2f;
+	m_cameraOffsets[11].second = -2.2f;*/
 
 	const float windowVerts[] = { -1.0f, 1.0f, 0.3f, -1.0f,-1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, 1.0f, 0.3f, -1.0f, 1.0f, 0.3f };
 	const float windowQuadUVs[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
@@ -562,6 +590,36 @@ void Renderer::Render(Camera& camera, float deltaTime)
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 	m_skybox->Render(m_skyProgram, sky_combined_xform);
+
+	/*for (size_t i = 0; i < 12; i++)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, m_accumulationFBO[i]);
+
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		//glUseProgram(m_skyProgram);
+		//glDisable(GL_DEPTH_TEST);
+		//glDepthMask(GL_FALSE);
+		//m_skybox->Render(m_skyProgram, sky_combined_xform);
+		//glEnable(GL_DEPTH_TEST);
+		//glDepthMask(GL_TRUE);
+
+		camera.SetPosition(camera.GetPosition() + (camera.GetRightVector() * m_cameraOffsets[i].first) + (camera.GetUpVector() * m_cameraOffsets[i].second));
+		glm::mat4 sample_view_xform = glm::lookAt(camera.GetPosition(), camera.GetPosition() + camera.GetLookVector(), camera.GetUpVector());
+		glm::mat4 sample_sky_view_xform = glm::mat4(glm::mat3(sample_view_xform));
+		glm::mat4 sample_sky_combined_xform = projection_xform * sample_sky_view_xform;
+		//GLuint sample_sky_combined_xform_id = glGetUniformLocation(m_skyProgram, "combined_xform");
+		//glUniformMatrix4fv(sample_sky_combined_xform_id, 1, GL_FALSE, glm::value_ptr(sample_sky_combined_xform));
+
+
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+		m_skybox->Render(m_skyProgram, sample_sky_combined_xform);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+	}*/
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
@@ -625,12 +683,9 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		model->Render(m_lightProgram, combined_xform, tempXForm, m_lights, camera);
 	}
 
-	for (size_t i = 0; i < 12; i++)
+	/*for (size_t i = 0; i < 12; i++)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_accumulationFBO[i]);
-
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//glUseProgram(m_skyProgram);
 		//glDisable(GL_DEPTH_TEST);
@@ -639,16 +694,15 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		//glEnable(GL_DEPTH_TEST);
 		//glDepthMask(GL_TRUE);
 
+		camera.SetPosition(camera.GetPosition() + (camera.GetRightVector() * m_cameraOffsets[i].first) + (camera.GetUpVector() * m_cameraOffsets[i].second));
+		glm::mat4 sample_view_xform = glm::lookAt(camera.GetPosition(), camera.GetPosition() + camera.GetLookVector(), camera.GetUpVector());
+		glm::mat4 sample_combined_xform = projection_xform * sample_view_xform;
+
 		glUseProgram(m_ambientProgram);
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_BLEND);
-
-		camera.SetPosition(camera.GetPosition() + (camera.GetRightVector() * m_cameraOffsets[i].first) + (camera.GetUpVector() * m_cameraOffsets[i].second));
-
-		glm::mat4 sample_view_xform = glm::lookAt(camera.GetPosition(), camera.GetPosition() + camera.GetLookVector(), camera.GetUpVector());
-		glm::mat4 sample_combined_xform = projection_xform * sample_view_xform;
 
 		for (std::shared_ptr<Model>& model : m_models)
 		{
@@ -672,49 +726,73 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glDisable(GL_BLEND);
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LEQUAL);
-	}
-
-	//dof blur
-	glBindFramebuffer(GL_FRAMEBUFFER, m_rectDOFFBO);
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glUseProgram(m_dofProgram);
-	glBindVertexArray(m_VAO);
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE);
-	glDepthFunc(GL_EQUAL);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
-
-	glBindTexture(GL_TEXTURE_2D, m_rectDepthTexture);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_rectTexture);
-	glActiveTexture(GL_TEXTURE0);
-	//glActiveTexture(GL_TEXTURE0 + 2);
-	//glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
-	glUniform1i(glGetUniformLocation(m_dofProgram, "sampler_depth_tex"), 0);
-	glUniform1i(glGetUniformLocation(m_dofProgram, "sampler_colour_tex"), 1);
-	glUniform1f(glGetUniformLocation(m_dofProgram, "aperture"), m_aperture);
-	glUniform1f(glGetUniformLocation(m_dofProgram, "focalLength"), m_focalLength);
-	glUniform1f(glGetUniformLocation(m_dofProgram, "planeInFocus"), m_planeInFocus);
-	GLuint depthResolutionId = glGetUniformLocation(m_dofProgram, "screen_resolution");
-	glUniform2fv(depthResolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
-
-	for (size_t i = 0; i < 12; i++)
+	}*/
+	if (m_isDepthOfField)
 	{
-		glActiveTexture(GL_TEXTURE0 + 20 + i);
-		glBindTexture(GL_TEXTURE_2D, m_accumulationSamples[i]);
-		GLuint samplerId = glGetUniformLocation(m_dofProgram, std::string("sampler_accum_colours_tex[" + std::to_string(i) + "]").c_str());
-		glUniform1i(samplerId, m_accumulationSamples[i]);
+		//dof blur
+		glBindFramebuffer(GL_FRAMEBUFFER, m_rectDOFFBO);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glUseProgram(m_dofProgram);
+		glBindVertexArray(m_VAO);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_EQUAL);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+
+		glBindTexture(GL_TEXTURE_2D, m_rectDepthTexture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, m_rectTexture);
+		glActiveTexture(GL_TEXTURE0);
+		//glActiveTexture(GL_TEXTURE0 + 2);
+		//glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
+		glUniform1i(glGetUniformLocation(m_dofProgram, "sampler_depth_tex"), 0);
+		glUniform1i(glGetUniformLocation(m_dofProgram, "sampler_colour_tex"), 1);
+		glUniform1f(glGetUniformLocation(m_dofProgram, "aperture"), m_aperture);
+		glUniform1f(glGetUniformLocation(m_dofProgram, "focalLength"), m_focalLength);
+		glUniform1f(glGetUniformLocation(m_dofProgram, "planeInFocus"), m_planeInFocus);
+		glUniform1i(glGetUniformLocation(m_dofProgram, "horizontal"), 0);
+		GLuint depthResolutionId = glGetUniformLocation(m_dofProgram, "screen_resolution");
+		glUniform2fv(depthResolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
+
+		glActiveTexture(GL_TEXTURE0);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, m_rectDOFPassTwoFBO);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, m_rectDOFTexture);
+		glActiveTexture(GL_TEXTURE0);
+		glUniform1i(glGetUniformLocation(m_dofProgram, "sampler_depth_tex"), 0);
+		glUniform1i(glGetUniformLocation(m_dofProgram, "sampler_colour_tex"), 1);
+		glUniform1f(glGetUniformLocation(m_dofProgram, "aperture"), m_aperture);
+		glUniform1f(glGetUniformLocation(m_dofProgram, "focalLength"), m_focalLength);
+		glUniform1f(glGetUniformLocation(m_dofProgram, "planeInFocus"), m_planeInFocus);
+		glUniform1i(glGetUniformLocation(m_dofProgram, "horizontal"), 1);
+		depthResolutionId = glGetUniformLocation(m_dofProgram, "screen_resolution");
+		glUniform2fv(depthResolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
+
+		/*for (size_t i = 0; i < 12; i++)
+		{
+			glActiveTexture(GL_TEXTURE0 + i);
+			glBindTexture(GL_TEXTURE_2D, m_accumulationSamples[i]);
+			GLuint samplerId = glGetUniformLocation(m_dofProgram, std::string("sampler_accum_colours_tex[" + std::to_string(i) + "]").c_str());
+			glUniform1i(samplerId, m_accumulationSamples[i]);
+		}*/
+
+		glActiveTexture(GL_TEXTURE0);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
+	
 
-	glActiveTexture(GL_TEXTURE0);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	if (m_antiAliasing)
+	if (m_isAntiAliasing)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_rectAAFBO);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -730,7 +808,10 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		GLuint resolutionId = glGetUniformLocation(m_fxaaProgram, "screen_resolution");
 		glUniform2fv(resolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
 
-		glBindTexture(GL_TEXTURE_2D, m_rectDOFTexture);
+		if (m_isDepthOfField)
+			glBindTexture(GL_TEXTURE_2D, m_rectDOFPassTwoTexture);
+		else
+			glBindTexture(GL_TEXTURE_2D, m_rectTexture);
 		//glActiveTexture(GL_TEXTURE0 + 2);
 		//glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
 		glUniform1i(glGetUniformLocation(m_fxaaProgram, "sampler_tex"), 0);
@@ -752,7 +833,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_BLEND);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_rectDOFTexture);
+		glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
 		//glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
 
 
@@ -776,7 +857,10 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_LEQUAL);
 		glDisable(GL_BLEND);
-		glBindTexture(GL_TEXTURE_2D, m_rectTexture);
+		if (m_isDepthOfField)
+			glBindTexture(GL_TEXTURE_2D, m_rectDOFPassTwoTexture);
+		else
+			glBindTexture(GL_TEXTURE_2D, m_rectTexture);
 		//glUniform1i(glGetUniformLocation(m_rectProgram, "screenSampler"), m_rectTexture);
 
 

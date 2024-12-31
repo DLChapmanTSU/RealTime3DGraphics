@@ -32,12 +32,14 @@ private:
 	GLuint m_rectDepthFBO{ 0 };
 	GLuint m_rectDepthTexture{ 0 };
 	GLuint m_rectDOFTexture{ 0 };
+	GLuint m_rectDOFPassTwoFBO{ 0 };
+	GLuint m_rectDOFPassTwoTexture{ 0 };
 
 	//Extra textures for extra light passes
-	GLuint m_accumulationSamples[12]{ 0 };
-	GLuint m_accumulationFBO[12]{ 0 };
+	//GLuint m_accumulationSamples[12]{ 0 };
+	//GLuint m_accumulationFBO[12]{ 0 };
 	//Camera offsets for extra light passes
-	std::pair<float, float> m_cameraOffsets[12];
+	//std::pair<float, float> m_cameraOffsets[12];
 
 	// Vertex Array Object to wrap all render settings
 	GLuint m_VAO{ 0 };
@@ -46,7 +48,8 @@ private:
 	GLuint m_numElements{ 0 };
 
 	bool m_wireframe{ false };
-	bool m_antiAliasing{ false };
+	bool m_isAntiAliasing{ false };
+	bool m_isDepthOfField{ false };
 	float m_aperture = 5.0f;
 	float m_focalLength = 2.0f;
 	float m_planeInFocus = 5.0f;

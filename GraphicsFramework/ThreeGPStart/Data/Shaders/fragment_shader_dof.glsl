@@ -1,11 +1,12 @@
 #version 330
 uniform sampler2D sampler_depth_tex;
 uniform sampler2D sampler_colour_tex;
-uniform sampler2D sampler_accum_colours_tex[12];
+//uniform sampler2D sampler_accum_colours_tex[12];
 uniform vec2 screen_resolution;
 uniform float aperture;
 uniform float focalLength;
 uniform float planeInFocus;
+uniform int horizontal;
 
 in vec2 uvCoord;
 
@@ -13,7 +14,7 @@ out vec4 fragment_colour;
 
 float near = 1.0f;
 float far = 100.0f;
-float circleOfConfusionCap = 10.0f;
+float circleOfConfusionCap = 100.0f;
 
 
 
@@ -57,44 +58,25 @@ void main(void)
 
 	float CoC = CircleOfConfusion(finalDepth);
 
-	//blur here
-
-	
-
-	int count = 0;
-	vec4 combinedColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-
-	if (CoC <= 0.0f)
+	if (CoC <= 1.0f)
 	{
 		fragment_colour = pixelData;
+		return;
 	}
-	else
+
+	if (CoC > circleOfConfusionCap)
 	{
-		if (CoC > circleOfConfusionCap)
-			CoC = circleOfConfusionCap;
-
-		vec4 accumulation = pixelData;
-
-		for (int i = 0; i < 12; i++)
-		{
-			accumulation += texture2D(sampler_accum_colours_tex[i], pixelScreenPos);
-		}
-
-		//accumulation *= CoC;
-	
-		vec4 averageColour = (accumulation) / 13.0f;
-		//averageColour = (averageColour / circleOfConfusionCap);
-		//averageColour += pixelData;
-		//averageColour /= 2.0f;
-
-		//if (length(averageColour) != length(pixelData))
-		//{
-		//	averageColour = normalize(averageColour);
-		//	averageColour *= length(pixelData);
-		//	averageColour.w = pixelData.w;
-		//}
-
-		//fragment_colour = (pixelData + (averageColour * CoC)) / (2.0f + CoC);
-		fragment_colour = averageColour;
+		CoC = circleOfConfusionCap;
 	}
+
+	//blur here
+
+	float x,y,xx,yy,rr=CoC*CoC,d,w,w0;
+    w0=0.5135/pow(CoC,0.96);
+    vec2 p=uvCoord;
+    vec4 col=vec4(0.0,0.0,0.0,0.0);
+    if (horizontal==0) for (d=texelSize.x,x=-CoC,p.x+=x*d;x<=CoC;x++,p.x+=d){ w=w0*exp((-x*x)/(2.0*rr)); col+=texture2D(sampler_colour_tex,p)*w; }
+    if (horizontal==1) for (d=texelSize.y,y=-CoC,p.y+=y*d;y<=CoC;y++,p.y+=d){ w=w0*exp((-y*y)/(2.0*rr)); col+=texture2D(sampler_colour_tex,p)*w; }
+
+	fragment_colour = col;
 }
