@@ -229,7 +229,7 @@ void Terrain::Initialise(glm::mat4 x, std::string& p, std::string& h)
 	m_xForm = x;
 }
 
-void Terrain::Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l, const Helpers::Camera& cam)
+void Terrain::Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l, const Helpers::Camera& cam, GLuint& shadow, glm::mat4 ls)
 {
 	// Send the combined matrix to the shader in a uniform
 	GLuint combined_xform_id = glGetUniformLocation(p, "combined_xform");
@@ -332,6 +332,13 @@ void Terrain::Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l,
 			glUniform1f(angle_id, 0.0f);
 		}
 	}
+
+	GLuint ls_id = glGetUniformLocation(p, "lightSpaceMatrix");
+	glUniformMatrix4fv(ls_id, 1, GL_FALSE, glm::value_ptr(ls));
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, shadow);
+	glUniform1i(glGetUniformLocation(p, "shadow_tex"), 1);
 
 	//Binds the texture and VAO, then draws the terrain
 	glActiveTexture(GL_TEXTURE0);

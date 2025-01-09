@@ -109,6 +109,9 @@ bool Renderer::InitialiseGeometry()
 	if (!CreateProgram(m_dofProgram, "Data/Shaders/vertex_shader_dof.glsl", "Data/Shaders/fragment_shader_dof.glsl"))
 		return false;
 
+	if (!CreateProgram(m_shadowDepthProgram, "Data/Shaders/vertex_shader_lightdepth.glsl", "Data/Shaders/fragment_shader_lightdepth.glsl"))
+		return false;
+
 	// Helpers has an object for loading 3D geometry, supports most types
 	
 	// Load in the jeep
@@ -221,7 +224,7 @@ bool Renderer::InitialiseGeometry()
 	pointTest9.m_colour = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	Light directionalLight;
-	directionalLight.m_position = glm::vec3(200.0f, 10.0f, 200.0f);
+	directionalLight.m_position = glm::vec3(0.0f, 100.0f, 0.0f);
 	directionalLight.m_intensity = 0.2f;
 	directionalLight.m_type = 0;
 	directionalLight.m_direction = glm::vec3(1.0f, -1.0f, 1.0f);
@@ -279,8 +282,8 @@ bool Renderer::InitialiseGeometry()
 		}
 	}
 
-	m_models.push_back(std::make_shared<Model>(Model(glm::vec3(0), 500.0f)));
-	m_models.push_back(std::make_shared<Model>(Model(glm::vec3(50.0f, 0.0f, 0.0f), 500.0f)));
+	m_models.push_back(std::make_shared<Model>(Model(glm::vec3(0.0f, 0.5f, 0.0f), 500.0f)));
+	m_models.push_back(std::make_shared<Model>(Model(glm::vec3(50.0f, 20.0f, 50.0f), 500.0f)));
 
 	std::vector<glm::mat4> xFormsTemp;
 
@@ -448,12 +451,28 @@ bool Renderer::InitialiseGeometry()
 
 	glDrawBuffer(GL_NONE);
 
-	//unsigned int depthrbo;
-	//glGenRenderbuffers(1, &depthrbo);
-	//glBindRenderbuffer(GL_RENDERBUFFER, depthrbo);
-	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 1280, 720);
+	if (!glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		return false;
 
-	//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	//Framebuffer setup for depth test texture
+	glGenFramebuffers(1, &m_rectShadowFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectShadowFBO);
+
+
+	glGenTextures(1, &m_rectShadowTexture);
+	glBindTexture(GL_TEXTURE_2D, m_rectShadowTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1280, 720, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_rectShadowTexture, 0);
+
+	glDrawBuffer(GL_NONE);
 
 	if (!glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
 		return false;
@@ -658,6 +677,28 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		model->RenderDepthPass(m_depthProgram, combined_xform, tempXForm);
 	}
 
+	glBindFramebuffer(GL_FRAMEBUFFER, m_rectShadowFBO);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(m_depthProgram);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_BLEND);
+	glCullFace(GL_FRONT);
+	float near_plane = 1.0f, far_plane = 500.0f;
+	glm::mat4 lightProjection = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, near_plane, far_plane);
+	glm::mat4 lightView = glm::lookAt(m_lights[m_lights.size()-1].m_position,
+		m_lights[m_lights.size() - 1].m_position + m_lights[m_lights.size() - 1].m_direction,
+		glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+
+	for (std::shared_ptr<Model>& model : m_models)
+	{
+		model->RenderDepthPass(m_depthProgram, lightSpaceMatrix, tempXForm);
+	}
+	glCullFace(GL_BACK);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
 
 	glUseProgram(m_ambientProgram);
@@ -678,9 +719,13 @@ void Renderer::Render(Camera& camera, float deltaTime)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 
+	//glActiveTexture(GL_TEXTURE1);
+	//glBindTexture(GL_TEXTURE_2D, m_rectShadowTexture);
+	//glUniform1i(glGetUniformLocation(m_lightProgram, "shadow_tex"), 0);
+
 	for (std::shared_ptr<Model>& model : m_models) 
 	{
-		model->Render(m_lightProgram, combined_xform, tempXForm, m_lights, camera);
+		model->Render(m_lightProgram, combined_xform, tempXForm, m_lights, camera, m_rectShadowTexture, lightSpaceMatrix);
 	}
 
 	/*for (size_t i = 0; i < 12; i++)

@@ -98,7 +98,7 @@ void Model::Initialise(std::vector<glm::mat4>& x, Helpers::ImageLoader& image, H
 
 }
 
-void Model::Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l, const Helpers::Camera& cam)
+void Model::Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l, const Helpers::Camera& cam, GLuint& shadow, glm::mat4 ls)
 {
 	//Decides which lights to use if the number of lights in the scene exceeds the total that can be passed into the shader
 	//Decides based on the distance from the root of the model
@@ -207,6 +207,13 @@ void Model::Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l, c
 				glUniform1f(angle_id, 0.0f);
 			}
 		}
+
+		GLuint ls_id = glGetUniformLocation(p, "lightSpaceMatrix");
+		glUniformMatrix4fv(ls_id, 1, GL_FALSE, glm::value_ptr(ls));
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, shadow);
+		glUniform1i(glGetUniformLocation(p, "shadow_tex"), 1);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_tex);

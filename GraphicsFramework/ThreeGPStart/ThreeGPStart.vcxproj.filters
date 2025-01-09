@@ -188,5 +188,11 @@
     <None Include="Data\Shaders\vertex_shader_dof.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Data\Shaders\fragment_shader_lightdepth.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Data\Shaders\vertex_shader_lightdepth.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

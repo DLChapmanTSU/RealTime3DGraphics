@@ -24,6 +24,7 @@ private:
 	GLuint m_fxaaProgram{ 0 };
 	GLuint m_depthProgram{ 0 };
 	GLuint m_dofProgram{ 0 };
+	GLuint m_shadowDepthProgram{ 0 };
 	GLuint m_rectFBO{ 0 };
 	GLuint m_rectTexture{ 0 };
 	GLuint m_rectAAFBO{ 0 };
@@ -35,6 +36,9 @@ private:
 	GLuint m_rectDOFPassTwoFBO{ 0 };
 	GLuint m_rectDOFPassTwoTexture{ 0 };
 
+	//Shadow Buffers
+	GLuint m_rectShadowFBO{ 0 };
+	GLuint m_rectShadowTexture{ 0 };
 	//Extra textures for extra light passes
 	//GLuint m_accumulationSamples[12]{ 0 };
 	//GLuint m_accumulationFBO[12]{ 0 };
