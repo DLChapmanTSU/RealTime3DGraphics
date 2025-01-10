@@ -229,7 +229,7 @@ void Terrain::Initialise(glm::mat4 x, std::string& p, std::string& h)
 	m_xForm = x;
 }
 
-void Terrain::Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l, const Helpers::Camera& cam, GLuint& shadow, glm::mat4 ls)
+void Terrain::Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l, const Helpers::Camera& cam)
 {
 	// Send the combined matrix to the shader in a uniform
 	GLuint combined_xform_id = glGetUniformLocation(p, "combined_xform");
@@ -311,6 +311,13 @@ void Terrain::Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l,
 
 			GLuint angle_id = glGetUniformLocation(p, std::string("lights[" + std::to_string(i) + "].m_angle").c_str());
 			glUniform1f(angle_id, lightsToUse[i].m_angle);
+
+			GLuint matrix_id = glGetUniformLocation(p, std::string("lights[" + std::to_string(i) + "].m_lightSpaceMatrix").c_str());
+			glUniformMatrix4fv(matrix_id, 1, GL_FALSE, glm::value_ptr(lightsToUse[i].m_lightSpaceMatrix));
+
+			glActiveTexture(GL_TEXTURE1 + i);
+			glBindTexture(GL_TEXTURE_2D, lightsToUse[i].m_shadowMap);
+			glUniform1i(glGetUniformLocation(p, std::string("lights[" + std::to_string(i) + "].m_shadowMap").c_str()), 1 + i);
 		}
 		else {
 			GLuint intensity_id = glGetUniformLocation(p, std::string("lights[" + std::to_string(i) + "].m_intensity").c_str());
@@ -330,16 +337,23 @@ void Terrain::Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l,
 
 			GLuint angle_id = glGetUniformLocation(p, std::string("lights[" + std::to_string(i) + "].m_angle").c_str());
 			glUniform1f(angle_id, 0.0f);
+
+			GLuint matrix_id = glGetUniformLocation(p, std::string("lights[" + std::to_string(i) + "].m_lightSpaceMatrix").c_str());
+			glUniformMatrix4fv(matrix_id, 1, GL_FALSE, glm::value_ptr(glm::mat4(0)));
+
+			glActiveTexture(GL_TEXTURE1 + i);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glUniform1i(glGetUniformLocation(p, std::string("lights[" + std::to_string(i) + "].m_shadowMap").c_str()), 1 + i);
 		}
 	}
 
-	GLuint ls_id = glGetUniformLocation(p, "lightSpaceMatrix");
+	/*GLuint ls_id = glGetUniformLocation(p, "lightSpaceMatrix");
 	glUniformMatrix4fv(ls_id, 1, GL_FALSE, glm::value_ptr(ls));
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, shadow);
 	glUniform1i(glGetUniformLocation(p, "shadow_tex"), 1);
-
+	*/
 	//Binds the texture and VAO, then draws the terrain
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_tex);

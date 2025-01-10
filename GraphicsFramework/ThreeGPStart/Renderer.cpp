@@ -7,6 +7,9 @@
 
 using namespace Helpers;
 
+#define SHADOWMAP_DIMENSIONS_X 5120
+#define SHADOWMAP_DIMENSIONS_Y 2880
+
 Renderer::Renderer() 
 {
 
@@ -231,7 +234,7 @@ bool Renderer::InitialiseGeometry()
 	directionalLight.m_colour = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	Light spotLight1;
-	spotLight1.m_position = glm::vec3(150.0f, 30.0f, 220.0f);
+	spotLight1.m_position = glm::vec3(150.0f, 30.0f, 400.0f);
 	spotLight1.m_intensity = 1.0f;
 	spotLight1.m_type = 2;
 	spotLight1.m_direction = glm::vec3(1.0f, 0.0f, 0.0f);
@@ -282,7 +285,7 @@ bool Renderer::InitialiseGeometry()
 		}
 	}
 
-	m_models.push_back(std::make_shared<Model>(Model(glm::vec3(0.0f, 0.5f, 0.0f), 500.0f)));
+	m_models.push_back(std::make_shared<Model>(Model(glm::vec3(300.0f, 5.0f, 200.0f), 500.0f)));
 	m_models.push_back(std::make_shared<Model>(Model(glm::vec3(50.0f, 20.0f, 50.0f), 500.0f)));
 
 	std::vector<glm::mat4> xFormsTemp;
@@ -435,6 +438,7 @@ bool Renderer::InitialiseGeometry()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	
 	//Framebuffer setup for depth test texture
 	glGenFramebuffers(1, &m_rectDepthFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_rectDepthFBO);
@@ -456,28 +460,36 @@ bool Renderer::InitialiseGeometry()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	//Framebuffer setup for depth test texture
-	glGenFramebuffers(1, &m_rectShadowFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_rectShadowFBO);
-
-
-	glGenTextures(1, &m_rectShadowTexture);
-	glBindTexture(GL_TEXTURE_2D, m_rectShadowTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1280, 720, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_rectShadowTexture, 0);
 
-	glDrawBuffer(GL_NONE);
+	for (Light& l : m_lights)
+	{
+		GLuint newFBO;
+		//Framebuffer setup for depth test texture
+		glGenFramebuffers(1, &newFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, newFBO);
 
-	if (!glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-		return false;
+		
+		glGenTextures(1, &l.m_shadowMap);
+		glBindTexture(GL_TEXTURE_2D, l.m_shadowMap);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, SHADOWMAP_DIMENSIONS_X, SHADOWMAP_DIMENSIONS_Y, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, l.m_shadowMap, 0);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDrawBuffer(GL_NONE);
+
+		if (!glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+			return false;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		m_lightFBOs.push_back(newFBO);
+	}
+
+	
 
 	/*for (int i = 0; i < 12; i++)
 	{
@@ -677,29 +689,54 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		model->RenderDepthPass(m_depthProgram, combined_xform, tempXForm);
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_rectShadowFBO);
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glUseProgram(m_depthProgram);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LEQUAL);
-	glDisable(GL_BLEND);
-	glCullFace(GL_FRONT);
-	float near_plane = 1.0f, far_plane = 500.0f;
-	glm::mat4 lightProjection = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, near_plane, far_plane);
-	glm::mat4 lightView = glm::lookAt(m_lights[m_lights.size()-1].m_position,
-		m_lights[m_lights.size() - 1].m_position + m_lights[m_lights.size() - 1].m_direction,
-		glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-
-	for (std::shared_ptr<Model>& model : m_models)
+	for (size_t i = 0; i < m_lights.size(); i++)
 	{
-		model->RenderDepthPass(m_depthProgram, lightSpaceMatrix, tempXForm);
+		if (i >= m_lightFBOs.size())
+			break;
+		glBindFramebuffer(GL_FRAMEBUFFER, m_lightFBOs[i]);
+		glViewport(0, 0, SHADOWMAP_DIMENSIONS_X, SHADOWMAP_DIMENSIONS_Y);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glUseProgram(m_depthProgram);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LEQUAL);
+		glDisable(GL_BLEND);
+		glCullFace(GL_FRONT);
+
+		glm::mat4 lightProjection;
+		glm::mat4 lightView;
+		
+		if (m_lights[i].m_type == 0)
+		{
+			m_lights[i].m_position = glm::vec3(camera.GetPosition().x, m_lights[i].m_position.y, camera.GetPosition().z);
+			float near_plane = 1.0f, far_plane = 500.0f;
+			lightProjection = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, near_plane, far_plane);
+			lightView = glm::lookAt(m_lights[i].m_position,
+				m_lights[i].m_position + m_lights[i].m_direction,
+				glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+		else
+		{
+			lightProjection = glm::perspective(glm::radians(45.0f), (float)(SHADOWMAP_DIMENSIONS_X / SHADOWMAP_DIMENSIONS_Y), 1.0f, 1000000.0f);
+			lightView = glm::lookAt(m_lights[i].m_position,
+				m_lights[i].m_position + m_lights[i].m_direction,
+				glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+		
+		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+		m_lights[i].m_lightSpaceMatrix = lightSpaceMatrix;
+
+		for (std::shared_ptr<Model>& model : m_models)
+		{
+			model->RenderDepthPass(m_depthProgram, lightSpaceMatrix, tempXForm);
+		}
 	}
+	
 	glCullFace(GL_BACK);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
+	glViewport(0, 0, viewportSize[2], viewportSize[3]);
 
 	glUseProgram(m_ambientProgram);
 	glEnable(GL_DEPTH_TEST);
@@ -725,7 +762,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 
 	for (std::shared_ptr<Model>& model : m_models) 
 	{
-		model->Render(m_lightProgram, combined_xform, tempXForm, m_lights, camera, m_rectShadowTexture, lightSpaceMatrix);
+		model->Render(m_lightProgram, combined_xform, tempXForm, m_lights, camera);
 	}
 
 	/*for (size_t i = 0; i < 12; i++)

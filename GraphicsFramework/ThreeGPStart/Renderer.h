@@ -39,6 +39,7 @@ private:
 	//Shadow Buffers
 	GLuint m_rectShadowFBO{ 0 };
 	GLuint m_rectShadowTexture{ 0 };
+	std::vector<GLuint> m_lightFBOs;
 	//Extra textures for extra light passes
 	//GLuint m_accumulationSamples[12]{ 0 };
 	//GLuint m_accumulationFBO[12]{ 0 };

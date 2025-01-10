@@ -23,7 +23,7 @@ private:
 public:
 	Terrain(int x = 0, int z = 0);
 	void Initialise(glm::mat4 x, std::string& p, std::string& h);
-	void Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l, const Helpers::Camera& cam, GLuint& shadow, glm::mat4 ls) override;
+	void Render(GLuint& p, glm::mat4 c, glm::mat4 m, std::vector<Light>& l, const Helpers::Camera& cam) override;
 	void RenderAmbientPass(GLuint& p, glm::mat4 c, glm::mat4 m) override;
 	void RenderDepthPass(GLuint& p, glm::mat4 c, glm::mat4 m) override;
 private:
