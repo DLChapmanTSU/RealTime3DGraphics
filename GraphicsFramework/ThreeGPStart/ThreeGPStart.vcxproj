@@ -144,6 +144,7 @@
     <None Include="Data\Shaders\fragment_shader_light.glsl" />
     <None Include="Data\Shaders\fragment_shader_lightdepth.glsl" />
     <None Include="Data\Shaders\fragment_shader_rect.glsl" />
+    <None Include="Data\Shaders\fragment_shader_simple_aa.glsl" />
     <None Include="Data\Shaders\fragment_shader_skybox.glsl" />
     <None Include="Data\Shaders\vertex_shader.glsl" />
     <None Include="Data\Shaders\vertex_shader_ambient.glsl" />
@@ -153,6 +154,7 @@
     <None Include="Data\Shaders\vertex_shader_light.glsl" />
     <None Include="Data\Shaders\vertex_shader_lightdepth.glsl" />
     <None Include="Data\Shaders\vertex_shader_rect.glsl" />
+    <None Include="Data\Shaders\vertex_shader_simple_aa.glsl" />
     <None Include="Data\Shaders\vertex_shader_skybox.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

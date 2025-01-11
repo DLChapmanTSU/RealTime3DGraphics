@@ -6,7 +6,7 @@ in vec2 uvCoord;
 
 out vec4 fragment_colour;
 
-float targetContrast = 0.01f;
+float targetContrast = 0.0f;
 int stepLimit = 24;
 
 float weightsRowOne[5] = float[5](1.0f, 1.25f, 2.0f, 1.25f, 1.0f);
@@ -119,13 +119,26 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	//{
 	//	return pixel;
 	//}
+	/*else
+	{
+		vec4 colour = vec4(0);
+		for(int x = -1; x <= 1; ++x)
+		{
+			for(int y = -1; y <= 1; ++y)
+			{
+			    colour += texture2D(sampler_tex, pos + vec2(x, y) * texSize);
+			}    
+		}
+
+		return colour / 9.0f;
+	}*/
 
 	//TODO - Edge Detection
 	//https://blog.simonrodriguez.fr/articles/2016/07/implementing_fxaa.html
 	float horizontalEdge = abs(-2.0f * luminanceRowThree[1] + (luminanceRowTwo[1] + luminanceRowFour[1])) + abs(-2.0f * luminanceRowThree[2] + (luminanceRowTwo[2] + luminanceRowFour[2])) + abs(-2.0f * luminanceRowThree[3] + (luminanceRowTwo[3] + luminanceRowFour[3]));
 	float verticalEdge = abs(-2.0f * luminanceRowTwo[2] + (luminanceRowTwo[1] + luminanceRowTwo[3])) + abs(-2.0f * luminanceRowThree[2] + (luminanceRowThree[1] + luminanceRowThree[3])) + abs(-2.0f * luminanceRowFour[2] + (luminanceRowFour[1] + luminanceRowFour[3]));
 
-	bool isHorizontal = (horizontalEdge >= verticalEdge);
+	bool isHorizontal = (horizontalEdge > verticalEdge);
 
 	float neighbourOneLuma = isHorizontal ? luminanceRowFour[2] : luminanceRowThree[1];
 	float neighbourTwoLuma = isHorizontal ? luminanceRowTwo[2] : luminanceRowThree[3];
@@ -213,9 +226,12 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	float offsetFinal = isVarCorrect ? pixOffset : 0.0f;
 
 	//subpixel stuff
-	float surroundingLuma = luminanceRowTwo[1] + luminanceRowTwo[2] + luminanceRowTwo[3] +
-							luminanceRowThree[1] + luminanceRowThree[3] + 
-							luminanceRowFour[1] + luminanceRowFour[2] + luminanceRowFour[3];
+	//float surroundingLuma = luminanceRowTwo[1] + luminanceRowTwo[2] + luminanceRowTwo[3] +
+	//						luminanceRowThree[1] + luminanceRowThree[3] + 
+	//						luminanceRowFour[1] + luminanceRowFour[2] + luminanceRowFour[3];
+
+	float surroundingLuma = (1.0f / 12/0f) * (2.0f * (luminanceRowTwo[2] + luminanceRowFour[2] + luminanceRowThree[1] + luminanceRowThree[3]) + luminanceRowTwo[1] + luminanceRowFour[1] + luminanceRowTwo[3] + luminanceRowFour[3]);
+
 	//float sumOfWeights = 0.0f;
 
 	/*for (int i = 0; i < 5; i++)
@@ -227,8 +243,8 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 		//sumOfWeights += weightsRowOne[i] + weightsRowTwo[i] + weightsRowThree[i] + weightsRowFour[i] + weightsRowFive[i];
 	}*/
 
-	surroundingLuma *= 2.0f;
-	surroundingLuma /= 12.0f;
+	//surroundingLuma *= 2.0f;
+	//surroundingLuma /= 8.0f;
 	float subPixelOffset1 = clamp(abs(surroundingLuma - luminanceRowThree[2]) / currentContrast, 0.0, 1.0);
 	float subPixelOffset2 = (-2.0 * subPixelOffset1 + 3.0) * subPixelOffset1 * subPixelOffset1;
 	float subPixelOffsetFinal = subPixelOffset2 * subPixelOffset2 * 0.75f;

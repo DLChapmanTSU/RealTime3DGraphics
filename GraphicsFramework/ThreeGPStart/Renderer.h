@@ -59,6 +59,8 @@ private:
 	float m_focalLength = 2.0f;
 	float m_planeInFocus = 5.0f;
 
+	float m_drsFactor = 1.0f;
+
 	glm::mat4 tempXForm = glm::mat4(1);
 	int tempElementCount = 0;
 

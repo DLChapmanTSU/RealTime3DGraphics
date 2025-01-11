@@ -10,6 +10,9 @@ using namespace Helpers;
 #define SHADOWMAP_DIMENSIONS_X 5120
 #define SHADOWMAP_DIMENSIONS_Y 2880
 
+#define DRS_RENDER_TARGET_X 1280
+#define DRS_RENDER_TARGET_Y 720
+
 Renderer::Renderer() 
 {
 
@@ -44,6 +47,8 @@ void Renderer::DefineGUI()
 		ImGui::SliderFloat("Focal Length", &m_focalLength, 0.1f, 1.0f);
 
 		ImGui::SliderFloat("Plane In Focus", &m_planeInFocus, 0.1f, 50.0f);
+
+		ImGui::SliderFloat("DRS Factor", &m_drsFactor, 0.1f, 1.0f);
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		
@@ -103,7 +108,7 @@ bool Renderer::InitialiseGeometry()
 	if (!CreateProgram(m_lightProgram, "Data/Shaders/vertex_shader_light.glsl", "Data/Shaders/fragment_shader_light.glsl"))
 		return false;
 
-	if (!CreateProgram(m_fxaaProgram, "Data/Shaders/vertex_shader_fxaa.glsl", "Data/Shaders/fragment_shader_fxaa.glsl"))
+	if (!CreateProgram(m_fxaaProgram, "Data/Shaders/vertex_shader_simple_aa.glsl", "Data/Shaders/fragment_shader_simple_aa.glsl"))
 		return false;
 
 	if (!CreateProgram(m_depthProgram, "Data/Shaders/vertex_shader_depth.glsl", "Data/Shaders/fragment_shader_depth.glsl"))
@@ -339,7 +344,7 @@ bool Renderer::InitialiseGeometry()
 	
 	glGenTextures(1, &m_rectTexture);
 	glBindTexture(GL_TEXTURE_2D, m_rectTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 720, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glBindTexture(GL_TEXTURE_2D, 0);
@@ -348,7 +353,7 @@ bool Renderer::InitialiseGeometry()
 	unsigned int rbo;
 	glGenRenderbuffers(1, &rbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y);
 
 	
 	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_rectTexture, 0);
@@ -366,7 +371,7 @@ bool Renderer::InitialiseGeometry()
 
 	glGenTextures(1, &m_rectAATexture);
 	glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 720, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glBindTexture(GL_TEXTURE_2D, 0);
@@ -375,7 +380,7 @@ bool Renderer::InitialiseGeometry()
 	unsigned int aarbo;
 	glGenRenderbuffers(1, &aarbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, aarbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y);
 
 
 	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_rectTexture, 0);
@@ -392,7 +397,7 @@ bool Renderer::InitialiseGeometry()
 
 	glGenTextures(1, &m_rectDOFTexture);
 	glBindTexture(GL_TEXTURE_2D, m_rectDOFTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 720, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glBindTexture(GL_TEXTURE_2D, 0);
@@ -401,7 +406,7 @@ bool Renderer::InitialiseGeometry()
 	unsigned int dofrbo;
 	glGenRenderbuffers(1, &dofrbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, dofrbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y);
 
 
 	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_rectTexture, 0);
@@ -418,7 +423,7 @@ bool Renderer::InitialiseGeometry()
 
 	glGenTextures(1, &m_rectDOFPassTwoTexture);
 	glBindTexture(GL_TEXTURE_2D, m_rectDOFPassTwoTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1280, 720, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glBindTexture(GL_TEXTURE_2D, 0);
@@ -427,7 +432,7 @@ bool Renderer::InitialiseGeometry()
 	unsigned int dofpasstworbo;
 	glGenRenderbuffers(1, &dofpasstworbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, dofpasstworbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1280, 720);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y);
 
 
 	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_rectTexture, 0);
@@ -446,7 +451,7 @@ bool Renderer::InitialiseGeometry()
 
 	glGenTextures(1, &m_rectDepthTexture);
 	glBindTexture(GL_TEXTURE_2D, m_rectDepthTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1280, 720, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -585,6 +590,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 	glm::vec3 originalCameraPos = camera.GetPosition();
 	glUseProgram(m_skyProgram);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
+	glViewport(0, 0, DRS_RENDER_TARGET_X * m_drsFactor, DRS_RENDER_TARGET_Y * m_drsFactor);
 	// Configure pipeline settings
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -736,7 +742,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 	glCullFace(GL_BACK);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_rectFBO);
-	glViewport(0, 0, viewportSize[2], viewportSize[3]);
+	glViewport(0, 0, DRS_RENDER_TARGET_X * m_drsFactor, DRS_RENDER_TARGET_Y * m_drsFactor);
 
 	glUseProgram(m_ambientProgram);
 	glEnable(GL_DEPTH_TEST);
@@ -837,7 +843,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glUniform1f(glGetUniformLocation(m_dofProgram, "planeInFocus"), m_planeInFocus);
 		glUniform1i(glGetUniformLocation(m_dofProgram, "horizontal"), 0);
 		GLuint depthResolutionId = glGetUniformLocation(m_dofProgram, "screen_resolution");
-		glUniform2fv(depthResolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
+		glUniform2fv(depthResolutionId, 1, glm::value_ptr(glm::vec2(DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y)));
 
 		glActiveTexture(GL_TEXTURE0);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -857,7 +863,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glUniform1f(glGetUniformLocation(m_dofProgram, "planeInFocus"), m_planeInFocus);
 		glUniform1i(glGetUniformLocation(m_dofProgram, "horizontal"), 1);
 		depthResolutionId = glGetUniformLocation(m_dofProgram, "screen_resolution");
-		glUniform2fv(depthResolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
+		glUniform2fv(depthResolutionId, 1, glm::value_ptr(glm::vec2(DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y)));
 
 		/*for (size_t i = 0; i < 12; i++)
 		{
@@ -873,7 +879,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	
-
+	glViewport(0, 0, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y);
 	if (m_isAntiAliasing)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_rectAAFBO);
@@ -888,7 +894,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
 		GLuint resolutionId = glGetUniformLocation(m_fxaaProgram, "screen_resolution");
-		glUniform2fv(resolutionId, 1, glm::value_ptr(glm::vec2(1280, 720)));
+		glUniform2fv(resolutionId, 1, glm::value_ptr(glm::vec2(DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y)));
 
 		if (m_isDepthOfField)
 			glBindTexture(GL_TEXTURE_2D, m_rectDOFPassTwoTexture);
