@@ -1,6 +1,7 @@
 #version 330
 uniform sampler2D sampler_tex;
 uniform vec2 screen_resolution;
+uniform float screen_scaling;
 
 in vec2 uvCoord;
 
@@ -80,6 +81,12 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 			vec2 offset = vec2((i - 2) * texSize.x, (j - 2) * texSize.y);
 			vec2 pixPos = pos + offset;
 			vec4 pixColour = texture2D(sampler_tex, pixPos);
+			if (pixPos.x <= 0.1f || pixPos.x >= 0.9f || pixPos.y <= 0.1f || pixPos.y >= 0.9f || pixColour.a != 1.0f)
+			{
+				pixColour = pixel;
+				pixPos = pos;
+			}
+			
 			float pixLum = calculateLuminance(pixColour);
 
 			if (abs(pixLum - baseLuminance) > currentContrast)
@@ -114,24 +121,6 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 			}
 		}
 	}
-
-	//if (currentContrast < targetContrast)
-	//{
-	//	return pixel;
-	//}
-	/*else
-	{
-		vec4 colour = vec4(0);
-		for(int x = -1; x <= 1; ++x)
-		{
-			for(int y = -1; y <= 1; ++y)
-			{
-			    colour += texture2D(sampler_tex, pos + vec2(x, y) * texSize);
-			}    
-		}
-
-		return colour / 9.0f;
-	}*/
 
 	//TODO - Edge Detection
 	//https://blog.simonrodriguez.fr/articles/2016/07/implementing_fxaa.html
@@ -213,6 +202,14 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 
 		if (!endTwoReached)
 			dirEndTwo += offset;
+
+		if (dirEndOne.x <= 0.1f || dirEndOne.x >= 0.9f || dirEndOne.y <= 0.1f || dirEndOne.y >= 0.9f || texture2D(sampler_tex, dirEndOne).a != 1.0f)
+			endOneReached = true;
+
+		if (dirEndTwo.x <= 0.1f || dirEndTwo.x >= 0.9f || dirEndTwo.y <= 0.1f || dirEndTwo.y >= 0.9f || texture2D(sampler_tex, dirEndTwo).a != 1.0f)
+			endTwoReached = true;
+
+		bothReached = endOneReached && endTwoReached;
 	}
 
 	float distToOne = isHorizontal ? (currentPos.x - dirEndOne.x) : (currentPos.y - dirEndOne.y);
@@ -225,26 +222,8 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 	bool isVarCorrect = ((isDirOne ? lumaEndOne : lumaEndTwo) < 0.0f) != isMidSmaller;
 	float offsetFinal = isVarCorrect ? pixOffset : 0.0f;
 
-	//subpixel stuff
-	//float surroundingLuma = luminanceRowTwo[1] + luminanceRowTwo[2] + luminanceRowTwo[3] +
-	//						luminanceRowThree[1] + luminanceRowThree[3] + 
-	//						luminanceRowFour[1] + luminanceRowFour[2] + luminanceRowFour[3];
-
 	float surroundingLuma = (1.0f / 12/0f) * (2.0f * (luminanceRowTwo[2] + luminanceRowFour[2] + luminanceRowThree[1] + luminanceRowThree[3]) + luminanceRowTwo[1] + luminanceRowFour[1] + luminanceRowTwo[3] + luminanceRowFour[3]);
 
-	//float sumOfWeights = 0.0f;
-
-	/*for (int i = 0; i < 5; i++)
-	{
-		if (i == 2)
-			surroundingLuma += luminanceRowOne[i] + luminanceRowTwo[i] + luminanceRowFour[i] + luminanceRowFive[i];
-		else
-			surroundingLuma += luminanceRowOne[i] + luminanceRowTwo[i] + luminanceRowThree[i] + luminanceRowFour[i] + luminanceRowFive[i];
-		//sumOfWeights += weightsRowOne[i] + weightsRowTwo[i] + weightsRowThree[i] + weightsRowFour[i] + weightsRowFive[i];
-	}*/
-
-	//surroundingLuma *= 2.0f;
-	//surroundingLuma /= 8.0f;
 	float subPixelOffset1 = clamp(abs(surroundingLuma - luminanceRowThree[2]) / currentContrast, 0.0, 1.0);
 	float subPixelOffset2 = (-2.0 * subPixelOffset1 + 3.0) * subPixelOffset1 * subPixelOffset1;
 	float subPixelOffsetFinal = subPixelOffset2 * subPixelOffset2 * 0.75f;
@@ -257,80 +236,13 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 		blurredUv.x += offsetFinal * stepLength;
 
 	return texture2D(sampler_tex, blurredUv);
-
-	/*if (isHorizontal)
-	{
-		if (neighbourOneDiff >= neighbourTwoDiff)
-		{
-			for (int i = 0; i < 5; i++)
-			{
-				coloursRowOne[i] *= 2.0f;
-				coloursRowTwo[i] *= 2.0f;
-				sumOfWeights += weightsRowOne[i] + weightsRowTwo[i];
-			}
-		}
-		else
-		{
-			for (int i = 0; i < 5; i++)
-			{
-				coloursRowFour[i] *= 2.0f;
-				coloursRowFive[i] *= 2.0f;
-				sumOfWeights += weightsRowFour[i] + weightsRowFive[i];
-			}
-		}
-	}
-	else
-	{
-		if (neighbourOneDiff >= neighbourTwoDiff)
-		{
-			coloursRowOne[0] *= 2.0f;
-			coloursRowOne[1] *= 2.0f;
-			coloursRowTwo[0] *= 2.0f;
-			coloursRowTwo[1] *= 2.0f;
-			coloursRowThree[0] *= 2.0f;
-			coloursRowThree[1] *= 2.0f;
-			coloursRowFour[0] *= 2.0f;
-			coloursRowFour[1] *= 2.0f;
-			coloursRowFive[0] *= 2.0f;
-			coloursRowFive[1] *= 2.0f;
-			sumOfWeights += weightsRowOne[0] + weightsRowOne[1] +
-				weightsRowTwo[0] + weightsRowTwo[1] +
-				weightsRowThree[0] + weightsRowThree[1] +
-				weightsRowFour[0] + weightsRowFour[1] +
-				weightsRowFive[0] + weightsRowFive[1];
-		}
-		else
-		{
-			coloursRowOne[3] *= 2.0f;
-			coloursRowOne[4] *= 2.0f;
-			coloursRowTwo[3] *= 2.0f;
-			coloursRowTwo[4] *= 2.0f;
-			coloursRowThree[3] *= 2.0f;
-			coloursRowThree[4] *= 2.0f;
-			coloursRowFour[3] *= 2.0f;
-			coloursRowFour[4] *= 2.0f;
-			coloursRowFive[3] *= 2.0f;
-			coloursRowFive[4] *= 2.0f;
-			sumOfWeights += weightsRowOne[3] + weightsRowOne[4] +
-				weightsRowTwo[3] + weightsRowTwo[4] +
-				weightsRowThree[3] + weightsRowThree[4] +
-				weightsRowFour[3] + weightsRowFour[4] +
-				weightsRowFive[3] + weightsRowFive[4];
-		}
-	}*/
-
-	//vec4 finalColour = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-	
-
-
-	//return finalColour / sumOfWeights;
 }
 
 void main(void)
 {
-	vec2 pixelScreenPos = (gl_FragCoord.xy / screen_resolution.xy);
+	vec2 pixelScreenPos = (gl_FragCoord.xy / (screen_resolution.xy));
 	vec4 pixelData = texture2D(sampler_tex, pixelScreenPos);
-	vec2 texelSize = 1.0f / screen_resolution.xy;
+	vec2 texelSize = 1.0f / (screen_resolution.xy);
 	vec4 finalColour = calculateFXAA(pixelScreenPos, pixelData, texelSize);
 	finalColour = vec4(finalColour.xyz, 1.0f);
 	fragment_colour = finalColour;

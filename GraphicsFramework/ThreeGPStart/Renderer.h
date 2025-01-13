@@ -48,6 +48,8 @@ private:
 
 	// Vertex Array Object to wrap all render settings
 	GLuint m_VAO{ 0 };
+	GLuint m_vertexVBO{ 0 };
+	GLuint m_uvVBO{ 0 };
 
 	// Number of elments to use when rendering
 	GLuint m_numElements{ 0 };

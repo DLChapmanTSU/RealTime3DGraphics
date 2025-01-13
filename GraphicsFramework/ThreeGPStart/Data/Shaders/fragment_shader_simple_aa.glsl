@@ -17,17 +17,6 @@ float calculateLuminance(vec4 color)
 
 vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 {
-	/*LuminanceSample luminanceSample;
-	luminanceSample.m = calculateLuminance(pixel);
-	vec4 rgbN = pixel;
-	vec4 rgbS = pixel;
-	vec4 rgbE = pixel;
-	vec4 rgbW = pixel;
-	vec4 rgbNE = pixel;
-	vec4 rgbSE = pixel;
-	vec4 rgbSW = pixel;
-	vec4 rgbNW = pixel;*/
-
 	//Need to use a mat4 instead. This is too messy
 	//Need to define a mat4 to aply weights
 
@@ -60,6 +49,13 @@ vec4 calculateFXAA(vec2 pos, vec4 pixel, vec2 texSize)
 			vec2 offset = vec2((i - 2) * texSize.x, (j - 2) * texSize.y);
 			vec2 pixPos = pos + offset;
 			vec4 pixColour = texture2D(sampler_tex, pixPos);
+
+			if (pixPos.x <= 0.1f || pixPos.x >= 0.9f || pixPos.y <= 0.1f || pixPos.y >= 0.9f || pixColour.a != 1.0f)
+			{
+				pixColour = pixel;
+				pixPos = pos;
+			}
+
 			float pixLum = calculateLuminance(pixColour);
 
 			if (abs(pixLum - baseLuminance) > currentContrast)

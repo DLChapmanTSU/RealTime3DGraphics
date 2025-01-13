@@ -344,7 +344,7 @@ bool Renderer::InitialiseGeometry()
 	
 	glGenTextures(1, &m_rectTexture);
 	glBindTexture(GL_TEXTURE_2D, m_rectTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glBindTexture(GL_TEXTURE_2D, 0);
@@ -371,7 +371,7 @@ bool Renderer::InitialiseGeometry()
 
 	glGenTextures(1, &m_rectAATexture);
 	glBindTexture(GL_TEXTURE_2D, m_rectAATexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glBindTexture(GL_TEXTURE_2D, 0);
@@ -397,7 +397,7 @@ bool Renderer::InitialiseGeometry()
 
 	glGenTextures(1, &m_rectDOFTexture);
 	glBindTexture(GL_TEXTURE_2D, m_rectDOFTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glBindTexture(GL_TEXTURE_2D, 0);
@@ -423,7 +423,7 @@ bool Renderer::InitialiseGeometry()
 
 	glGenTextures(1, &m_rectDOFPassTwoTexture);
 	glBindTexture(GL_TEXTURE_2D, m_rectDOFPassTwoTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glBindTexture(GL_TEXTURE_2D, 0);
@@ -551,27 +551,27 @@ bool Renderer::InitialiseGeometry()
 	const float windowVerts[] = { -1.0f, 1.0f, 0.3f, -1.0f,-1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, -1.0f, 0.3f, 1.0f, 1.0f, 0.3f, -1.0f, 1.0f, 0.3f };
 	const float windowQuadUVs[] = { 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
 
-	GLuint vertexVBO;
+	//GLuint vertexVBO;
 
-	glGenBuffers(1, &vertexVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	glGenBuffers(1, &m_vertexVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_vertexVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(windowVerts), windowVerts, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	GLuint uvVBO;
+	//GLuint uvVBO;
 
-	glGenBuffers(1, &uvVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, uvVBO);
+	glGenBuffers(1, &m_uvVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_uvVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(windowQuadUVs), windowQuadUVs, GL_STATIC_DRAW);
 
 	glGenVertexArrays(1, &m_VAO);
 	glBindVertexArray(m_VAO);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_vertexVBO);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, uvVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_uvVBO);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
@@ -815,6 +815,8 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LEQUAL);
 	}*/
+	
+
 	if (m_isDepthOfField)
 	{
 		//dof blur
@@ -823,6 +825,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(m_dofProgram);
 		glBindVertexArray(m_VAO);
+
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
@@ -844,6 +847,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glUniform1i(glGetUniformLocation(m_dofProgram, "horizontal"), 0);
 		GLuint depthResolutionId = glGetUniformLocation(m_dofProgram, "screen_resolution");
 		glUniform2fv(depthResolutionId, 1, glm::value_ptr(glm::vec2(DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y)));
+		glUniform1f(glGetUniformLocation(m_dofProgram, "screen_scaling"), 1.0f);
 
 		glActiveTexture(GL_TEXTURE0);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -864,6 +868,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glUniform1i(glGetUniformLocation(m_dofProgram, "horizontal"), 1);
 		depthResolutionId = glGetUniformLocation(m_dofProgram, "screen_resolution");
 		glUniform2fv(depthResolutionId, 1, glm::value_ptr(glm::vec2(DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y)));
+		glUniform1f(glGetUniformLocation(m_dofProgram, "screen_scaling"), 1.0f);
 
 		/*for (size_t i = 0; i < 12; i++)
 		{
@@ -880,6 +885,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 	}
 	
 	glViewport(0, 0, DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y);
+	
 	if (m_isAntiAliasing)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_rectAAFBO);
@@ -895,6 +901,7 @@ void Renderer::Render(Camera& camera, float deltaTime)
 		glBlendFunc(GL_ONE, GL_ONE);
 		GLuint resolutionId = glGetUniformLocation(m_fxaaProgram, "screen_resolution");
 		glUniform2fv(resolutionId, 1, glm::value_ptr(glm::vec2(DRS_RENDER_TARGET_X, DRS_RENDER_TARGET_Y)));
+		glUniform1f(glGetUniformLocation(m_fxaaProgram, "screen_scaling"), m_drsFactor);
 
 		if (m_isDepthOfField)
 			glBindTexture(GL_TEXTURE_2D, m_rectDOFPassTwoTexture);
@@ -915,6 +922,9 @@ void Renderer::Render(Camera& camera, float deltaTime)
 
 		glUseProgram(m_rectProgram);
 		glBindVertexArray(m_VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_uvVBO);
+		float windowQuadUVs[] = { 0.0f, m_drsFactor, 0.0f, 0.0f, m_drsFactor, 0.0f, m_drsFactor, 0.0f, m_drsFactor, m_drsFactor, 0.0f, m_drsFactor };
+		glBufferData(GL_ARRAY_BUFFER, sizeof(windowQuadUVs), windowQuadUVs, GL_STATIC_DRAW);
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
@@ -940,6 +950,9 @@ void Renderer::Render(Camera& camera, float deltaTime)
 
 		glUseProgram(m_rectProgram);
 		glBindVertexArray(m_VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, m_uvVBO);
+		float windowQuadUVs[] = { 0.0f, m_drsFactor, 0.0f, 0.0f, m_drsFactor, 0.0f, m_drsFactor, 0.0f, m_drsFactor, m_drsFactor, 0.0f, m_drsFactor };
+		glBufferData(GL_ARRAY_BUFFER, sizeof(windowQuadUVs), windowQuadUVs, GL_STATIC_DRAW);
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
